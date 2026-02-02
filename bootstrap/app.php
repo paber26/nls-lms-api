@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\HandleCors;
 
 // use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {  
+        // Enable CORS for API & SPA
+        $middleware->append(HandleCors::class);
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->expectsJson()) {
                 return null;

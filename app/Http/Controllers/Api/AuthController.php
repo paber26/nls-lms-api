@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use PhpParser\Node\Expr\Print_;
 
 class AuthController extends Controller
 {
@@ -21,11 +22,14 @@ class AuthController extends Controller
         $googleUser = Socialite::driver('google')
             ->stateless()
             ->user();
-
+            
         $user = User::where('google_id', $googleUser->id)
             ->orWhere('email', $googleUser->email)
             ->first();
-
+        
+        // print_r('oke'); exit;
+        // print_r($googleUser->toArray()); exit;
+            
         if (! $user) {
             $user = User::create([
                 'name' => $googleUser->name,
@@ -41,6 +45,7 @@ class AuthController extends Controller
             ]);
         }
 
+
         // print_r($user->toArray()); exit;
         // $token = $user->createToken('google-token')->plainTextToken;
 
@@ -52,8 +57,10 @@ class AuthController extends Controller
         $token = $user->createToken('google-token')->plainTextToken;
 
         // URL frontend kamu (Vite)
-        // $frontendUrl = 'http://localhost:5173/oauth/callback';
-        $frontendUrl = 'http://nextlevelstudy-admin.salite.site/oauth/callback';
+        $frontendUrl = 'http://localhost:5173/oauth/callback';
+        // $frontendUrl = 'http://nextlevelstudy-admin.salite.site/oauth/callback';
+
+        // print_r($user->toArray()); exit;
 
         return redirect()->away(
             $frontendUrl . '?token=' . $token
