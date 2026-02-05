@@ -56,9 +56,9 @@ class AuthController extends Controller
 
         $token = $user->createToken('google-token')->plainTextToken;
 
-        // URL frontend kamu (Vite)
-        $frontendUrl = 'http://localhost:5173/oauth/callback';
-        // $frontendUrl = 'http://nextlevelstudy-admin.salite.site/oauth/callback';
+        // URL frontend dari ENV
+        $frontendUrl = rtrim(config('app.frontend_url'), '/') . '/oauth/callback';
+        // print($frontendUrl); exit;
 
         // print_r($user->toArray()); exit;
 

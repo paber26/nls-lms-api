@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\BankSoal;
 use App\Models\OpsiJawaban;
+use App\Models\BankSoalPernyataan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -71,6 +72,7 @@ class BankSoalController extends Controller
     {
         DB::beginTransaction();
 
+
         try {
             // 1️⃣ Simpan soal utama
             $soal = BankSoal::create([
@@ -85,6 +87,7 @@ class BankSoalController extends Controller
                 'created_by' => $request->user()?->id ?? 1,
                 // 'created_by' => 1,
             ]);
+
 
             // 2️⃣ Jika PG → simpan opsi
             if ($request->tipe === 'pg') {
@@ -109,6 +112,21 @@ class BankSoalController extends Controller
                     'idopsijawaban' => $idOpsiBenar
                 ]);
             }
+            
+
+            // 2️⃣ Jika PG Kompleks → simpan pernyataan benar/salah
+            if ($request->tipe === 'pg_kompleks') {
+                foreach ($request->pernyataan as $index => $item) {
+                    $cek = BankSoalPernyataan::create([
+                        'banksoal_id'   => $soal->id,
+                        'urutan'        => $index + 1,
+                        'teks'          => $item['text'],
+                        'jawaban_benar' => $item['jawaban'],
+                    ]);
+                    // return $cek;
+                }
+
+            }
 
             DB::commit();
 
@@ -130,7 +148,7 @@ class BankSoalController extends Controller
     // 🔹 GET /api/bank-soal/{id}
     public function show($id)
     {
-        $bankSoal = BankSoal::with(['mapel', 'opsiJawaban'])
+        $bankSoal = BankSoal::with(['mapel', 'opsiJawaban', 'pernyataanKompleks'])
             ->findOrFail($id);
 
         return response()->json([
@@ -147,6 +165,12 @@ class BankSoalController extends Controller
                     'is_correct' => (bool) $o->is_correct,
                 ];
             }),
+            'pernyataan' => $bankSoal->pernyataanKompleks?->map(function ($p) {
+                return [
+                    'text' => $p->teks,
+                    'jawaban' => (bool) $p->jawaban_benar,
+                ];
+            }),
         ]);
     }
 
@@ -157,7 +181,7 @@ class BankSoalController extends Controller
 
         $request->validate([
             'mapel_id' => 'required|exists:mapel,id',
-            'tipe' => 'required|in:pg,isian',
+            'tipe' => 'required|in:pg,isian,pg_kompleks',
             'pertanyaan' => 'required|string',
             'pembahasan' => 'nullable|string',
             'jawaban_isian' => 'nullable|string',
@@ -204,6 +228,21 @@ class BankSoalController extends Controller
                 $bankSoal->update([
                     'idopsijawaban' => $idOpsiBenar
                 ]);
+            }
+
+            // hapus pernyataan lama jika PG Kompleks
+            if ($request->tipe === 'pg_kompleks') {
+                $bankSoal->pernyataanKompleks()->delete();
+
+                foreach ($request->pernyataan as $index => $item) {
+                    BankSoalPernyataan::create([
+                        'banksoal_id'   => $bankSoal->id,
+                        'urutan'     
+                           => $index + 1,
+                        'teks'          => $item['text'],
+                        'jawaban_benar' => $item['jawaban'],
+                    ]);
+                }
             }
 
             DB::commit();

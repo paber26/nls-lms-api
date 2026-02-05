@@ -40,4 +40,13 @@ class BankSoal extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function pernyataanKompleks()
+    {
+        return $this->hasMany(
+            BankSoalPernyataan::class,
+            'banksoal_id'
+        )->orderBy('urutan');
+    }
+
 }
