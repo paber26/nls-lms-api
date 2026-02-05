@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
+
+use App\Http\Controllers\Api\UserTryoutController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
 use App\Models\Mapel;
@@ -50,4 +52,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tryout/{id}/soal/{banksoalId}', [TryoutSoalController::class, 'destroy']);
     Route::put('/tryout/{id}/soal/urutan', [TryoutSoalController::class, 'updateUrutan']);
     Route::put('/tryout/{id}/soal/{banksoalId}/poin', [TryoutSoalController::class, 'updatePoin']);
+
+
+
+    Route::get('/user/tryout', [UserTryoutController::class, 'index']);
+    Route::get('/user/tryout/{id}', [UserTryoutController::class, 'show']);
+    Route::post('/user/tryout/{id}/start', [UserTryoutController::class, 'start']);
 });

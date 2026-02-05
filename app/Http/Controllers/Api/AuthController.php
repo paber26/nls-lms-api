@@ -12,8 +12,13 @@ class AuthController extends Controller
 {
     public function redirectToGoogle()
     {
+        $role = request()->get('role', 'user'); // default user
+
         return Socialite::driver('google')
             ->stateless()
+            ->with([
+                'state' => $role
+            ])
             ->redirect();
     }
 
@@ -22,6 +27,8 @@ class AuthController extends Controller
         $googleUser = Socialite::driver('google')
             ->stateless()
             ->user();
+        
+        $role = request()->get('state', 'user');
             
         $user = User::where('google_id', $googleUser->id)
             ->orWhere('email', $googleUser->email)
@@ -56,8 +63,14 @@ class AuthController extends Controller
 
         $token = $user->createToken('google-token')->plainTextToken;
 
-        // URL frontend dari ENV
-        $frontendUrl = rtrim(config('app.frontend_url'), '/') . '/oauth/callback';
+        
+        if ($role === 'admin') {
+            $frontendUrl = env('FRONTEND_ADMIN_URL') . '/oauth/callback';
+        } else {
+            $frontendUrl = env('FRONTEND_USER_URL') . '/oauth/callback';
+        }
+
+        // return $frontendUrl . $token;
         // print($frontendUrl); exit;
 
         // print_r($user->toArray()); exit;

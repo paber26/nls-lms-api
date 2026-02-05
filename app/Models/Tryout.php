@@ -27,4 +27,24 @@ class Tryout extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    // ✅ RELASI SOAL TRYOUT
+    public function questions()
+    {
+        return $this->hasMany(
+            TryoutSoal::class,
+            'tryout_id', // FK di tryout_soal
+            'id'         // PK di tryout
+        );
+    }
+
+    // ✅ RELASI ATTEMPT USER
+    public function attempts()
+    {
+        return $this->hasMany(
+            Attempt::class,
+            'tryout_id', // FK di attempt
+            'id'
+        );
+    }
 }
