@@ -26,6 +26,7 @@ class TryoutSoalController extends Controller
                     'id'         => $item->banksoal->id,
                     'pertanyaan' => $item->banksoal->pertanyaan,
                     'urutan'     => $item->urutan,
+                    'poin'       => $item->poin,
                 ];
             });
 
@@ -37,7 +38,7 @@ class TryoutSoalController extends Controller
      * Ambil soal tryout lengkap (termasuk jawaban & pembahasan)
      * Aman: tidak mengganggu endpoint lama
      */
-    public function indexDetail($id)
+    public function indexDetail_lama($id)
     {
         $soal = TryoutSoal::with('banksoal.opsiJawaban')
             ->where('tryout_id', $id)
@@ -59,6 +60,7 @@ class TryoutSoalController extends Controller
                     'jawaban_label' => $jawabanLabel,
                     'pembahasan'    => $item->banksoal->pembahasan,
                     'urutan'        => $item->urutan,
+                    'poin'          => $item->poin,
                     'opsi' => $opsi->map(function ($o) {
                         return [
                             'id'         => $o->id,
@@ -69,6 +71,78 @@ class TryoutSoalController extends Controller
                         ];
                     })->values(),
                 ];
+            });
+
+        return response()->json($soal);
+    }
+
+    public function indexDetail($id)
+    {
+        $soal = TryoutSoal::with([
+                'banksoal.opsiJawaban',
+                'banksoal.pernyataanKompleks'
+            ])
+            ->where('tryout_id', $id)
+            ->orderBy('urutan')
+            ->get()
+            ->map(function ($item) {
+
+                $banksoal = $item->banksoal;
+
+                $result = [
+                    'id'         => $banksoal->id,
+                    'pertanyaan' => $banksoal->pertanyaan,
+                    'tipe'       => $banksoal->tipe,
+                    'urutan'     => $item->urutan,
+                    'poin'       => $item->poin,
+                    'pembahasan' => $banksoal->pembahasan,
+                ];
+
+                // ======================
+                // ISIAN
+                // ======================
+                if ($banksoal->tipe === 'isian') {
+                    $result['jawaban'] = $banksoal->jawaban;
+                }
+
+                // ======================
+                // PG BIASA
+                // ======================
+                if ($banksoal->tipe === 'pg') {
+                    $opsi = $banksoal->opsiJawaban;
+
+                    $result['opsi'] = $opsi->map(fn ($o) => [
+                        'label'      => $o->label,
+                        'teks'       => $o->teks,
+                        'is_correct' => (bool) $o->is_correct,
+                        'poin'       => $o->poin,
+                    ])->values();
+
+                    $result['kunci'] = optional(
+                        $opsi->firstWhere('is_correct', 1)
+                    )->label;
+                }
+
+                // ======================
+                // PG KOMPLEKS (INI YANG KURANG KEMARIN)
+                // ======================
+                if ($banksoal->tipe === 'pg_kompleks') {
+                    $pernyataan = $banksoal->pernyataanKompleks;
+
+                    $result['pernyataan'] = $pernyataan->map(fn ($p) => [
+                        'urutan'        => $p->urutan,
+                        'teks'          => $p->teks,
+                        'jawaban_benar' => (bool) $p->jawaban_benar,
+                    ])->values();
+
+                    // daftar urutan pernyataan yang benar
+                    $result['kunci_kompleks'] = $pernyataan
+                        ->where('jawaban_benar', 1)
+                        ->pluck('urutan')
+                        ->values();
+                }
+
+                return $result;
             });
 
         return response()->json($soal);
@@ -156,5 +230,23 @@ class TryoutSoalController extends Controller
         ]);
     }
 
-    
+    public function updatePoin(Request $request, $tryoutId, $banksoalId)
+    {
+        $tryoutSoal = TryoutSoal::where('tryout_id', $tryoutId)
+            ->where('banksoal_id', $banksoalId)
+            ->first();
+
+        if (!$tryoutSoal) {
+            return response()->json([
+                'message' => 'Soal tidak ditemukan dalam tryout'
+            ], 404);
+        }
+        $tryoutSoal->poin = $request->poin;
+
+        $tryoutSoal->save();
+
+        return response()->json([
+            'message' => 'Poin soal berhasil diperbarui'
+        ]);
+    }
 }

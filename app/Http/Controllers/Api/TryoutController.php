@@ -55,7 +55,7 @@ class TryoutController extends Controller
             'durasi_menit' => 'required|integer',
             'mulai'        => 'required|date',
             'selesai'      => 'required|date',
-            'status'       => 'required|in:draft,active,finished',
+            // 'status'       => 'required|in:draft,active,finished',
         ]);
             
         $tryout = Tryout::create([
@@ -64,7 +64,7 @@ class TryoutController extends Controller
             'durasi_menit' => $data['durasi_menit'],
             'mulai'        => $data['mulai'],
             'selesai'      => $data['selesai'],
-            'status'       => $data['status'],
+            // 'status'       => $data['status'],
             'created_by'   => $request->user()?->id,
         ]);
 

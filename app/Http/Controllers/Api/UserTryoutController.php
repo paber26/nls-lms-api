@@ -32,11 +32,11 @@ class UserTryoutController extends Controller
                 $attempt = $tryout->attempts->first();
 
                 if (! $attempt) {
-                    $status = 'belum';
+                    $status = null;
                 } elseif ($attempt->selesai) {
-                    $status = 'selesai';
+                    $status = 'submitted';
                 } else {
-                    $status = 'berjalan';
+                    $status = 'ongoing';
                 }
 
                 return [
