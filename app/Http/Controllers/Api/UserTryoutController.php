@@ -236,6 +236,8 @@ class UserTryoutController extends Controller
 
     public function finish($id)
     {
+        return 'oke';
+    
         $user = Auth::user();
 
         // 1. Ambil attempt aktif
@@ -257,10 +259,99 @@ class UserTryoutController extends Controller
         ]);
 
         // 3. (OPSIONAL) Hitung nilai
-        // $this->hitungNilai($attempt);
+        $this->hitungNilai($attempt);
 
         return response()->json([
             'message' => 'Tryout berhasil diakhiri'
+        ]);
+    }
+
+    private function hitungNilai($attempt)
+    {
+        $totalPoin = 0;
+
+        $jawabanPeserta = JawabanPeserta::where('attempt_id', $attempt->id)->get();
+
+        foreach ($jawabanPeserta as $jawaban) {
+
+            $bankSoal = BankSoal::find($jawaban->banksoal_id);
+            if (! $bankSoal) continue;
+
+            // ambil tryout_soal untuk poin
+            $tryoutSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
+                ->where('banksoal_id', $bankSoal->id)
+                ->first();
+
+            $poinSoal = (float) ($tryoutSoal->poin ?? 0);
+
+            $jawabanUser = json_decode($jawaban->jawaban, true) ?? [];
+
+            /*
+            |--------------------------------------------------------------------------
+            | ISIAN → pakai tryout_soal.poin
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'isian') {
+                if (
+                    isset($bankSoal->jawaban) &&
+                    isset($jawabanUser[0]) &&
+                    strtolower(trim($jawabanUser[0])) === strtolower(trim($bankSoal->jawaban))
+                ) {
+                    $totalPoin += $poinSoal;
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | PILIHAN GANDA BIASA → pakai opsi_jawaban.poin
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'pg') {
+                if (isset($jawabanUser[0])) {
+                    $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                        ->where('label', $jawabanUser[0])
+                        ->first();
+
+                    if ($opsi && $opsi->is_correct) {
+                        $totalPoin += (float) ($opsi->poin ?? 0);
+                    }
+                }
+            }
+
+            /*
+            |--------------------------------------------------------------------------
+            | PILIHAN GANDA KOMPLEKS (aturan nasional)
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'pg_kompleks') {
+
+                $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+                    ->orderBy('urutan')
+                    ->get();
+
+                $jumlahBenar = 0;
+
+                foreach ($pernyataan as $p) {
+                    if (
+                        isset($jawabanUser[$p->urutan]) &&
+                        (int) $jawabanUser[$p->urutan] === (int) $p->jawaban_benar
+                    ) {
+                        $jumlahBenar++;
+                    }
+                }
+
+                if ($jumlahBenar === 4) {
+                    $totalPoin += 1.0;
+                } elseif ($jumlahBenar === 3) {
+                    $totalPoin += 0.6;
+                } elseif ($jumlahBenar === 2) {
+                    $totalPoin += 0.2;
+                }
+            }
+        }
+
+        $attempt->update([
+            'nilai' => $totalPoin
         ]);
     }
 }
