@@ -233,4 +233,34 @@ class UserTryoutController extends Controller
             'message' => 'Jawaban tersimpan'
         ]);
     }
+
+    public function finish($id)
+    {
+        $user = Auth::user();
+
+        // 1. Ambil attempt aktif
+        $attempt = Attempt::where('tryout_id', $id)
+            ->where('user_id', $user->id)
+            ->whereNull('selesai')
+            ->first();
+
+        if (! $attempt) {
+            return response()->json([
+                'message' => 'Tryout sudah diakhiri atau tidak ditemukan'
+            ], 400);
+        }
+
+        // 2. Kunci attempt
+        $attempt->update([
+            'selesai' => now(),
+            'status'  => 'submitted', // opsional, tapi disarankan
+        ]);
+
+        // 3. (OPSIONAL) Hitung nilai
+        // $this->hitungNilai($attempt);
+
+        return response()->json([
+            'message' => 'Tryout berhasil diakhiri'
+        ]);
+    }
 }
