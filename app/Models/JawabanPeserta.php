@@ -12,19 +12,19 @@ class JawabanPeserta extends Model
         'attempt_id',
         'banksoal_id',
         'jawaban',
+        'is_correct',
     ];
 
-    /**
-     * Relasi ke attempt (satu attempt punya banyak jawaban)
-     */
+    protected $casts = [
+        'jawaban' => 'array',
+        'is_correct' => 'boolean',
+    ];
+
     public function attempt()
     {
         return $this->belongsTo(Attempt::class, 'attempt_id');
     }
 
-    /**
-     * Relasi ke bank soal
-     */
     public function banksoal()
     {
         return $this->belongsTo(BankSoal::class, 'banksoal_id');

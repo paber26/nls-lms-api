@@ -10,6 +10,8 @@ use App\Models\Attempt;
 use App\Models\TryoutSoal;
 use App\Models\BankSoal;
 use App\Models\JawabanPeserta;
+use App\Models\OpsiJawaban;
+use App\Models\BanksoalPernyataan;
 
 class UserTryoutController extends Controller
 {
@@ -114,23 +116,83 @@ class UserTryoutController extends Controller
             ->orderBy('urutan')
             ->skip($number - 1)
             ->firstOrFail();
+        
+        // return response()->json([
+        //     'data' => $tryoutSoal
+        // ]);
+        
+
+        $tryoutSoal = TryoutSoal::where('tryout_id', $id)
+            ->orderBy('urutan')
+            ->get()
+            ->get($request->number - 1);
             
+        // return $tryoutSoal;
+        // return $tryoutSoal->get($number - 1);
+        // return $request->number;
 
         $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
         // return $bankSoal;
 
+        $tipe = $bankSoal->tipe;
+        $opsi = null;   
+
+        if ($tipe === 'pg') {
+            // pilihan ganda biasa → ambil dari opsi_jawaban
+            $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                ->orderBy('label')
+                ->get()
+                ->map(function ($o) {
+                    return [
+                        'key' => $o->label,
+                        'text' => $o->teks,
+                    ];
+                })
+                ->values();
+        }
+        // return $opsi;
+
+        if ($tipe === 'pg_kompleks') {
+            // pilihan ganda kompleks → ambil dari banksoal_pernyataan
+            $opsi = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+                ->orderBy('urutan')
+                ->get()
+                ->map(function ($p) {
+                    return [
+                        'key' => $p->urutan,
+                        'text' => $p->teks,
+                    ];
+                })
+                ->values();
+        }
+
+        // return $opsi;
+
         $totalSoal = TryoutSoal::where('tryout_id', $id)->count();
+
+        // return $totalSoal;
+
 
         // ambil jawaban user jika ada
         $jawaban = JawabanPeserta::where('attempt_id', $attempt->id)
             ->where('banksoal_id', $bankSoal->id)
             ->value('jawaban');
+        
+        // $jawaban = JawabanPeserta::where('attempt_id', $attempt->id)
+        //     ->where('banksoal_id', $bankSoal->id)
+        //     ->value('jawaban');
+
+            // return json_decode($jawaban, true);
+            // return $jawaban;
+            // return $attempt->id . ' - ' . $bankSoal->id;
 
         return response()->json([
             'data' => [
                 'pertanyaan' => $bankSoal->pertanyaan,
-                'opsi' => json_decode($bankSoal->opsi, true),
-                'jawaban' => $jawaban ? json_decode($jawaban, true) : [],
+                'tipe' => $tipe,
+                'opsi' => $opsi,
+                // 'jawaban' => $jawaban ? json_decode($jawaban, true) : [],
+                'jawaban' => $jawaban ?? [],
                 'peserta' => $user->name,
                 'total_soal' => $totalSoal,
             ]
@@ -145,7 +207,7 @@ class UserTryoutController extends Controller
         ]);
 
         $user = Auth::user();
-
+        
         $attempt = Attempt::where('tryout_id', $id)
             ->where('user_id', $user->id)
             ->whereNull('selesai')
@@ -155,16 +217,17 @@ class UserTryoutController extends Controller
             ->orderBy('urutan')
             ->skip($request->nomor - 1)
             ->firstOrFail();
-
+        
         JawabanPeserta::updateOrCreate(
             [
-                'attempt_id' => $attempt->id,
+                'attempt_id'  => $attempt->id,
                 'banksoal_id' => $tryoutSoal->banksoal_id,
             ],
             [
-                'jawaban' => json_encode($request->jawaban),
+               'jawaban' => array_values($request->jawaban),            
             ]
         );
+        
 
         return response()->json([
             'message' => 'Jawaban tersimpan'
