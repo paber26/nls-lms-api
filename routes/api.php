@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 // /Users/bernaldonapitupulu/Documents/Next Level Study/nextlevelstudy-api/app/Http/Controllers/api/AuthController.php
 // use App\Http\Controllers\api\AuthController;
+use App\Http\Controllers\Api\WilayahController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\TryoutController;
@@ -19,7 +20,11 @@ Route::get('/ping', function () {
         'success' => true,
         'message' => 'API connected'
     ]);
-}); 
+});
+
+Route::get('/wilayah/provinsi', [WilayahController::class, 'provinsi']);
+Route::get('/wilayah/kabupaten/{provinsiId}', [WilayahController::class, 'kabupaten']);
+Route::get('/wilayah/kecamatan/{kabupatenId}', [WilayahController::class, 'kecamatan']);
 
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
