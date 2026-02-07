@@ -27,4 +27,13 @@ class Attempt extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
+    
+    // ✅ INI YANG KURANG
+    public function jawabanPeserta()
+    {
+        return $this->hasMany(
+            JawabanPeserta::class,
+            'attempt_id'
+        );
+    }
 }

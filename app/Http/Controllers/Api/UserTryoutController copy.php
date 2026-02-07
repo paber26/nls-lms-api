@@ -329,10 +329,7 @@ class UserTryoutController extends Controller
 
             $poinSoal = (float) ($tryoutSoal->poin ?? 0);
 
-            // return $j;
-            // $jawabanUser = json_decode($j->jawaban, true) ?? [];
-            $jawabanUser = $j->jawaban ?? [];
-            // return $jawabanUser;
+            $jawabanUser = json_decode($j->jawaban, true) ?? [];
 
             /*
             |--------------------------------------------------------------------------
@@ -344,6 +341,7 @@ class UserTryoutController extends Controller
                     $nilaiPoin += $poinSoal;
                 }
             }
+
             /*
             |--------------------------------------------------------------------------
             | PG → pakai opsi_jawaban.poin
@@ -402,6 +400,7 @@ class UserTryoutController extends Controller
             'paket'        => $attempt->tryout->paket,
             'durasi_menit' => $attempt->tryout->durasi_menit,
             'jumlah_soal'  => $jawaban->count(),
+            'nilai'        => $attempt->nilai,
             'benar'        => $benar,
             'salah'        => $salah,
             'kosong'       => $kosong,
