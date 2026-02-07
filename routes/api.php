@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
 
+use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserTryoutController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
@@ -54,6 +55,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tryout/{id}/soal/{banksoalId}/poin', [TryoutSoalController::class, 'updatePoin']);
 
 
+    // Route::get('/sekolah', function () {return \App\Models\Sekolah::orderBy('nama')->get();});
+    // routes/api.php
+    Route::get('/sekolah', function () {
+        return Sekolah::orderBy('nama')->get();
+    });
 
     Route::get('/user/tryout', [UserTryoutController::class, 'index']);
     Route::get('/user/tryout/{id}', [UserTryoutController::class, 'show']);
@@ -62,5 +68,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/tryout/{id}/questions', [UserTryoutController::class, 'questions']);
     Route::post('/user/tryout/{id}/answer', [UserTryoutController::class, 'answer']);
     Route::post('/user/tryout/{id}/finish', [UserTryoutController::class, 'finish']);
-    Route::get('/user/tryout/hasil/{attemptId}', [UserTryoutController::class, 'hasil']);
+    Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
 });

@@ -21,9 +21,14 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'password',
         'google_id',
         'avatar',
+        'name',
+        'sekolah_id',
+        'kelas',
+        'kota',
+        'whatsapp',
+        'minat',
     ];
 
     /**
@@ -41,6 +46,11 @@ class User extends Authenticatable
      *
      * @return array<string, string>
      */
+
+    protected $casts = [
+        'minat' => 'array',
+    ];
+
     protected function casts(): array
     {
         return [
