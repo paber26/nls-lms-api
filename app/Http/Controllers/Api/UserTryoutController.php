@@ -406,7 +406,7 @@ class UserTryoutController extends Controller
             'salah'        => $salah,
             'kosong'       => $kosong,
             'navigasi'     => $navigasi,
-            'nilai_poin'   => $nilaiPoin,
+            'nilai_poin'   => round($nilaiPoin, 1)
         ]);
     }
 
