@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
 
 use App\Models\Sekolah;
+use App\Http\Controllers\Api\UserProfilController;
 use App\Http\Controllers\Api\UserTryoutController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
@@ -30,7 +31,27 @@ Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
-    return $request->user();
+    $user = $request->user();
+
+    $profilLengkap =
+        !empty($user->nama_lengkap) &&
+        !empty($user->sekolah_id) &&
+        !empty($user->kelas) &&
+        !empty($user->provinsi) &&
+        !empty($user->kota) &&
+        !empty($user->kecamatan) &&
+        !empty($user->whatsapp) &&
+        is_array($user->minat) &&
+        count($user->minat) > 0;
+
+    return response()->json([
+        'id' => $user->id,
+        'name' => $user->name,
+        'nama_lengkap' => $user->nama_lengkap,
+        'email' => $user->email,
+        'avatar' => $user->avatar,
+        'profil_lengkap' => $profilLengkap,
+    ]);
 });
 
 // Route::apiResource('banksoal', BankSoalController::class);
@@ -65,6 +86,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sekolah', function () {
         return Sekolah::orderBy('nama')->get();
     });
+
+    Route::post('/user/profile', [UserProfilController::class, 'store']);
 
     Route::get('/user/tryout', [UserTryoutController::class, 'index']);
     Route::get('/user/tryout/{id}', [UserTryoutController::class, 'show']);
