@@ -33,10 +33,7 @@ class AuthController extends Controller
         $user = User::where('google_id', $googleUser->id)
             ->orWhere('email', $googleUser->email)
             ->first();
-        
-        // print_r('oke'); exit;
-        // print_r($googleUser->toArray()); exit;
-            
+
         if (! $user) {
             $user = User::create([
                 'name' => $googleUser->name,
@@ -51,29 +48,13 @@ class AuthController extends Controller
                 'avatar' => $googleUser->avatar,
             ]);
         }
-
-
-        // print_r($user->toArray()); exit;
-        // $token = $user->createToken('google-token')->plainTextToken;
-
-        // return response()->json([
-        //     'token' => $token,
-        //     'user' => $user
-        // ]);
-
         $token = $user->createToken('google-token')->plainTextToken;
-
         
         if ($role === 'admin') {
             $frontendUrl = env('FRONTEND_ADMIN_URL') . '/oauth/callback';
         } else {
             $frontendUrl = env('FRONTEND_USER_URL') . '/oauth/callback';
         }
-
-        // return $frontendUrl . $token;
-        // print($frontendUrl); exit;
-
-        // print_r($user->toArray()); exit;
 
         return redirect()->away(
             $frontendUrl . '?token=' . $token
