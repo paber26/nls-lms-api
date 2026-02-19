@@ -17,6 +17,11 @@ class Attempt extends Model
         'status',
     ];
 
+    protected $casts = [
+        'mulai' => 'datetime',
+        'selesai' => 'datetime',
+    ];
+
     public function tryout()
     {
         return $this->belongsTo(Tryout::class, 'tryout_id');

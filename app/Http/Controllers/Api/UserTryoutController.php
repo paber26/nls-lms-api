@@ -99,6 +99,36 @@ class UserTryoutController extends Controller
             'attempt_id' => $attempt->id
         ]);
     }
+
+    public function remainingTime($id)
+    {
+        $user = Auth::user();
+
+        $tryout = Tryout::where('status', 'active')->findOrFail($id);
+        
+        $attempt = Attempt::where('tryout_id', $tryout->id)
+            ->where('user_id', $user->id)
+            ->where('status', 'ongoing')
+            ->firstOrFail();
+
+        $durasiMenit = $tryout->durasi_menit ?? 0;
+
+        $waktuSelesai = $attempt->mulai->copy()->addMinutes($durasiMenit);
+
+        $sekarang = now();
+
+        // Hitung selisih dalam detik
+        $sisaDetik = $sekarang->lessThan($waktuSelesai)
+            ? $sekarang->diffInSeconds($waktuSelesai)
+            : 0;
+
+        return response()->json([
+            'mulai'          => $attempt->mulai,
+            'durasi_menit'   => $durasiMenit,
+            'waktu_selesai'  => $waktuSelesai,
+            'sisa_detik'     => $sisaDetik,
+        ]);
+    }
     
     public function questions(Request $request, $id)
     {
