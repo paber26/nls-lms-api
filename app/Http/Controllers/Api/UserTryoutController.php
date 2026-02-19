@@ -18,13 +18,6 @@ class UserTryoutController extends Controller
     public function index()
     {
         $user = Auth::user();
-        // return $user->id;
-        // return 'oke dulu';
-        // return response()->json([
-        //     'auth_check' => Auth::check(),
-        //     'user' => Auth::user(),
-        //     'header' => request()->header('Authorization')
-        // ]);
 
         $tryouts = Tryout::where('status', 'active')
             ->withCount('questions')
@@ -40,7 +33,7 @@ class UserTryoutController extends Controller
 
                 if (! $attempt) {
                     $status = null;
-                } elseif ($attempt->selesai) {
+                } elseif ($attempt->status) {
                     $status = 'submitted';
                 } else {
                     $status = 'ongoing';
@@ -302,75 +295,82 @@ class UserTryoutController extends Controller
             'jawabanPeserta'
         ])
         ->where('tryout_id', $tryoutId)
-        ->where('user_id', Auth::user()->id)
+        ->where('user_id', 4)
         ->where('status', 'submitted')
         ->latest('selesai')
         ->firstOrFail();
 
-        $jawaban = $attempt->jawabanPeserta;
+        // $jawaban = $attempt->jawabanPeserta; // REMOVED
         $nilaiPoin = 0;
+
+        // Ambil semua soal tryout (bukan hanya yang dijawab)
+        $semuaSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
+            ->orderBy('urutan')
+            ->get();
+
+        // Ambil jawaban peserta lalu key by banksoal_id
+        $jawabanCollection = $attempt->jawabanPeserta->keyBy('banksoal_id');
         
         $benar = 0;
         $salah = 0;
         $kosong = 0;
         $navigasi = [];
 
-        foreach ($jawaban as $index => $j) {
-            if ($j->is_correct === null) {
-                $kosong++;
-                $status = 'kosong';
-            } elseif ((int) $j->is_correct === 1) {
-                $benar++;
-                $status = 'benar';
-            } else {
-                $salah++;
-                $status = 'salah';
-            }
+        foreach ($semuaSoal as $index => $tryoutSoal) {
 
-            $bankSoal = BankSoal::find($j->banksoal_id);
+            $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
             if (! $bankSoal) continue;
 
-            $tryoutSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
-                ->where('banksoal_id', $bankSoal->id)
-                ->first();
+            $j = $jawabanCollection->get($bankSoal->id);
+
+            if (! $j) {
+                $kosong++;
+                $status = 'kosong';
+                $jawabanUser = [];
+            } else {
+                if ($j->is_correct === null) {
+                    $kosong++;
+                    $status = 'kosong';
+                } elseif ((int) $j->is_correct === 1) {
+                    $benar++;
+                    $status = 'benar';
+                } else {
+                    $salah++;
+                    $status = 'salah';
+                }
+
+                $jawabanUser = $j->jawaban ?? [];
+            }
 
             $poinSoal = (float) ($tryoutSoal->poin ?? 0);
 
-            // return $j;
-            // $jawabanUser = json_decode($j->jawaban, true) ?? [];
-            $jawabanUser = $j->jawaban ?? [];
-            // return $jawabanUser;
-
             /*
             |--------------------------------------------------------------------------
-            | ISIAN → pakai tryout_soal.poin
+            | ISIAN
             |--------------------------------------------------------------------------
             */
-            if ($bankSoal->tipe === 'isian') {
-                if ((int) $j->is_correct === 1) {
-                    $nilaiPoin += $poinSoal;
-                }
+            if ($bankSoal->tipe === 'isian' && $j && (int) $j->is_correct === 1) {
+                $nilaiPoin += $poinSoal;
             }
+
             /*
             |--------------------------------------------------------------------------
-            | PG → pakai opsi_jawaban.poin
+            | PG
             |--------------------------------------------------------------------------
             */
-            if ($bankSoal->tipe === 'pg') {
-                if (isset($jawabanUser[0])) {
-                    $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
-                        ->where('label', $jawabanUser[0])
-                        ->first();
+            if ($bankSoal->tipe === 'pg' && isset($jawabanUser[0])) {
+                $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                    ->where('label', $jawabanUser[0])
+                    ->first();
 
-                    if ($opsi && $opsi->is_correct) {
-                        $nilaiPoin += (float) ($opsi->poin ?? 0);
-                    }
+                if ($opsi && $opsi->is_correct) {
+                    $nilaiPoin += (float) ($opsi->poin ?? 0);
                 }
             }
 
             /*
             |--------------------------------------------------------------------------
-            | PG KOMPLEKS → aturan nasional
+            | PG KOMPLEKS
             |--------------------------------------------------------------------------
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
@@ -408,7 +408,7 @@ class UserTryoutController extends Controller
         return response()->json([
             'paket'        => $attempt->tryout->paket,
             'durasi_menit' => $attempt->tryout->durasi_menit,
-            'jumlah_soal'  => $jawaban->count(),
+            'jumlah_soal'  => $semuaSoal->count(),
             'benar'        => $benar,
             'salah'        => $salah,
             'kosong'       => $kosong,

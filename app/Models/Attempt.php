@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Attempt extends Model
 {
     protected $table = 'attempt';
+    public $timestamps = false;
     
     protected $fillable = [
         'tryout_id',
@@ -15,8 +16,6 @@ class Attempt extends Model
         'selesai',
         'status',
     ];
-
-    const UPDATED_AT = null;
 
     public function tryout()
     {
@@ -28,7 +27,6 @@ class Attempt extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
     
-    // ✅ INI YANG KURANG
     public function jawabanPeserta()
     {
         return $this->hasMany(
