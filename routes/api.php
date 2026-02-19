@@ -48,6 +48,8 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
         'id' => $user->id,
         'name' => $user->name,
         'nama_lengkap' => $user->nama_lengkap,
+        'sekolah' => $user->sekolah_nama,
+        'kelas' => $user->kelas,
         'email' => $user->email,
         'avatar' => $user->avatar,
         'profil_lengkap' => $profilLengkap,
@@ -60,7 +62,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mapel', function () {
         return Mapel::select('id', 'nama', 'tingkat')->orderBy('nama')->get();
     });
-    
+
     Route::get('/banksoal', [BankSoalController::class, 'index']);
     Route::get('/banksoaltryout', [BankSoalController::class, 'listForTryout']);
     // Route::get('/banksoal/tryout', [BankSoalController::class, 'listForTryout']);

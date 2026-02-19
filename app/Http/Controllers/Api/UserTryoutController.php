@@ -18,6 +18,13 @@ class UserTryoutController extends Controller
     public function index()
     {
         $user = Auth::user();
+        // return $user->id;
+        // return 'oke dulu';
+        // return response()->json([
+        //     'auth_check' => Auth::check(),
+        //     'user' => Auth::user(),
+        //     'header' => request()->header('Authorization')
+        // ]);
 
         $tryouts = Tryout::where('status', 'active')
             ->withCount('questions')
