@@ -33,10 +33,8 @@ class UserTryoutController extends Controller
 
                 if (! $attempt) {
                     $status = null;
-                } elseif ($attempt->selesai) {
-                    $status = 'submitted';
                 } else {
-                    $status = 'ongoing';
+                    $status = $attempt->status;
                 }
 
                 return [
@@ -97,6 +95,36 @@ class UserTryoutController extends Controller
         return response()->json([
             'message' => 'Tryout started',
             'attempt_id' => $attempt->id
+        ]);
+    }
+
+    public function remainingTime($id)
+    {
+        $user = Auth::user();
+
+        $tryout = Tryout::where('status', 'active')->findOrFail($id);
+        
+        $attempt = Attempt::where('tryout_id', $tryout->id)
+            ->where('user_id', $user->id)
+            ->where('status', 'ongoing')
+            ->firstOrFail();
+
+        $durasiMenit = $tryout->durasi_menit ?? 0;
+
+        $waktuSelesai = $attempt->mulai->copy()->addMinutes($durasiMenit);
+
+        $sekarang = now();
+
+        // Hitung selisih dalam detik
+        $sisaDetik = $sekarang->lessThan($waktuSelesai)
+            ? $sekarang->diffInSeconds($waktuSelesai)
+            : 0;
+
+        return response()->json([
+            'mulai'          => $attempt->mulai,
+            'durasi_menit'   => $durasiMenit,
+            'waktu_selesai'  => $waktuSelesai,
+            'sisa_detik'     => $sisaDetik,
         ]);
     }
     
@@ -295,73 +323,82 @@ class UserTryoutController extends Controller
             'jawabanPeserta'
         ])
         ->where('tryout_id', $tryoutId)
-        ->where('user_id', Auth::user()->id)
+        ->where('user_id', Auth::id())
         ->where('status', 'submitted')
         ->latest('selesai')
         ->firstOrFail();
 
-        $jawaban = $attempt->jawabanPeserta;
+        // $jawaban = $attempt->jawabanPeserta; // REMOVED
         $nilaiPoin = 0;
+
+        // Ambil semua soal tryout (bukan hanya yang dijawab)
+        $semuaSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
+            ->orderBy('urutan')
+            ->get();
+
+        // Ambil jawaban peserta lalu key by banksoal_id
+        $jawabanCollection = $attempt->jawabanPeserta->keyBy('banksoal_id');
         
         $benar = 0;
         $salah = 0;
         $kosong = 0;
         $navigasi = [];
 
-        foreach ($jawaban as $index => $j) {
-            if ($j->is_correct === null) {
-                $kosong++;
-                $status = 'kosong';
-            } elseif ((int) $j->is_correct === 1) {
-                $benar++;
-                $status = 'benar';
-            } else {
-                $salah++;
-                $status = 'salah';
-            }
+        foreach ($semuaSoal as $index => $tryoutSoal) {
 
-            $bankSoal = BankSoal::find($j->banksoal_id);
+            $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
             if (! $bankSoal) continue;
 
-            $tryoutSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
-                ->where('banksoal_id', $bankSoal->id)
-                ->first();
+            $j = $jawabanCollection->get($bankSoal->id);
+
+            if (! $j) {
+                $kosong++;
+                $status = 'kosong';
+                $jawabanUser = [];
+            } else {
+                if ($j->is_correct === null) {
+                    $kosong++;
+                    $status = 'kosong';
+                } elseif ((int) $j->is_correct === 1) {
+                    $benar++;
+                    $status = 'benar';
+                } else {
+                    $salah++;
+                    $status = 'salah';
+                }
+
+                $jawabanUser = $j->jawaban ?? [];
+            }
 
             $poinSoal = (float) ($tryoutSoal->poin ?? 0);
 
-            $jawabanUser = json_decode($j->jawaban, true) ?? [];
+            /*
+            |--------------------------------------------------------------------------
+            | ISIAN
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'isian' && $j && (int) $j->is_correct === 1) {
+                $nilaiPoin += $poinSoal;
+            }
 
             /*
             |--------------------------------------------------------------------------
-            | ISIAN → pakai tryout_soal.poin
+            | PG
             |--------------------------------------------------------------------------
             */
-            if ($bankSoal->tipe === 'isian') {
-                if ((int) $j->is_correct === 1) {
-                    $nilaiPoin += $poinSoal;
+            if ($bankSoal->tipe === 'pg' && isset($jawabanUser[0])) {
+                $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                    ->where('label', $jawabanUser[0])
+                    ->first();
+
+                if ($opsi && $opsi->is_correct) {
+                    $nilaiPoin += (float) ($opsi->poin ?? 0);
                 }
             }
 
             /*
             |--------------------------------------------------------------------------
-            | PG → pakai opsi_jawaban.poin
-            |--------------------------------------------------------------------------
-            */
-            if ($bankSoal->tipe === 'pg') {
-                if (isset($jawabanUser[0])) {
-                    $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
-                        ->where('label', $jawabanUser[0])
-                        ->first();
-
-                    if ($opsi && $opsi->is_correct) {
-                        $nilaiPoin += (float) ($opsi->poin ?? 0);
-                    }
-                }
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | PG KOMPLEKS → aturan nasional
+            | PG KOMPLEKS
             |--------------------------------------------------------------------------
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
@@ -399,20 +436,17 @@ class UserTryoutController extends Controller
         return response()->json([
             'paket'        => $attempt->tryout->paket,
             'durasi_menit' => $attempt->tryout->durasi_menit,
-            'jumlah_soal'  => $jawaban->count(),
-            'nilai'        => $attempt->nilai,
+            'jumlah_soal'  => $semuaSoal->count(),
             'benar'        => $benar,
             'salah'        => $salah,
             'kosong'       => $kosong,
             'navigasi'     => $navigasi,
-            'nilai_poin'   => $nilaiPoin,
+            'nilai_poin'   => round($nilaiPoin, 1)
         ]);
     }
 
     public function finish($id)
     {
-        return 'oke';
-
         $user = Auth::user();
 
         // 1. Ambil attempt aktif
@@ -444,11 +478,10 @@ class UserTryoutController extends Controller
     private function hitungNilai($attempt)
     {
         $totalPoin = 0;
-
+        
         $jawabanPeserta = JawabanPeserta::where('attempt_id', $attempt->id)->get();
 
         foreach ($jawabanPeserta as $jawaban) {
-
             $bankSoal = BankSoal::find($jawaban->banksoal_id);
             if (! $bankSoal) continue;
 
@@ -459,7 +492,7 @@ class UserTryoutController extends Controller
 
             $poinSoal = (float) ($tryoutSoal->poin ?? 0);
 
-            $jawabanUser = json_decode($jawaban->jawaban, true) ?? [];
+            $jawabanUser = $jawaban->jawaban;
 
             /*
             |--------------------------------------------------------------------------
@@ -499,7 +532,6 @@ class UserTryoutController extends Controller
             |--------------------------------------------------------------------------
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
-
                 $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
                     ->orderBy('urutan')
                     ->get();
@@ -522,11 +554,12 @@ class UserTryoutController extends Controller
                 } elseif ($jumlahBenar === 2) {
                     $totalPoin += 0.2;
                 }
+                
             }
         }
-
+        
         $attempt->update([
-            'nilai' => $totalPoin
-        ]);
+                'nilai' => $totalPoin
+            ]);
     }
 }

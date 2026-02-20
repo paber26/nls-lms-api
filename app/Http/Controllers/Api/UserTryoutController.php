@@ -11,7 +11,7 @@ use App\Models\TryoutSoal;
 use App\Models\BankSoal;
 use App\Models\JawabanPeserta;
 use App\Models\OpsiJawaban;
-use App\Models\BanksoalPernyataan;
+use App\Models\BankSoalPernyataan;
 
 class UserTryoutController extends Controller
 {
@@ -145,15 +145,22 @@ class UserTryoutController extends Controller
             ->skip($number - 1)
             ->firstOrFail();
         
+        if (! $tryoutSoal) {
+            return response()->json([
+                'message' => 'Soal tidak ditemukan'
+            ], 404);
+        }
+
+        
         // return response()->json([
         //     'data' => $tryoutSoal
         // ]);
         
 
-        $tryoutSoal = TryoutSoal::where('tryout_id', $id)
-            ->orderBy('urutan')
-            ->get()
-            ->get($request->number - 1);
+        // $tryoutSoal = TryoutSoal::where('tryout_id', $id)
+        //     ->orderBy('urutan')
+        //     ->get()
+        //     ->get($request->number - 1);
             
         // return $tryoutSoal;
         // return $tryoutSoal->get($number - 1);
@@ -182,7 +189,8 @@ class UserTryoutController extends Controller
 
         if ($tipe === 'pg_kompleks') {
             // pilihan ganda kompleks → ambil dari banksoal_pernyataan
-            $opsi = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+
+            $opsi = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
                 ->orderBy('urutan')
                 ->get()
                 ->map(function ($p) {
@@ -281,7 +289,7 @@ class UserTryoutController extends Controller
         }
 
         if ($bankSoal->tipe === 'pg_kompleks') {
-            $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+            $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
                 ->orderBy('urutan')
                 ->get();
 
@@ -403,7 +411,7 @@ class UserTryoutController extends Controller
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
 
-                $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+                $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
                     ->orderBy('urutan')
                     ->get();
 
@@ -532,7 +540,7 @@ class UserTryoutController extends Controller
             |--------------------------------------------------------------------------
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
-                $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
+                $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
                     ->orderBy('urutan')
                     ->get();
 
