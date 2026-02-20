@@ -33,10 +33,8 @@ class UserTryoutController extends Controller
 
                 if (! $attempt) {
                     $status = null;
-                } elseif ($attempt->status) {
-                    $status = 'submitted';
                 } else {
-                    $status = 'ongoing';
+                    $status = $attempt->status;
                 }
 
                 return [
@@ -325,7 +323,7 @@ class UserTryoutController extends Controller
             'jawabanPeserta'
         ])
         ->where('tryout_id', $tryoutId)
-        ->where('user_id', 4)
+        ->where('user_id', Auth::id())
         ->where('status', 'submitted')
         ->latest('selesai')
         ->firstOrFail();
@@ -449,8 +447,6 @@ class UserTryoutController extends Controller
 
     public function finish($id)
     {
-        return 'oke';
-
         $user = Auth::user();
 
         // 1. Ambil attempt aktif
@@ -482,11 +478,10 @@ class UserTryoutController extends Controller
     private function hitungNilai($attempt)
     {
         $totalPoin = 0;
-
+        
         $jawabanPeserta = JawabanPeserta::where('attempt_id', $attempt->id)->get();
 
         foreach ($jawabanPeserta as $jawaban) {
-
             $bankSoal = BankSoal::find($jawaban->banksoal_id);
             if (! $bankSoal) continue;
 
@@ -497,7 +492,7 @@ class UserTryoutController extends Controller
 
             $poinSoal = (float) ($tryoutSoal->poin ?? 0);
 
-            $jawabanUser = json_decode($jawaban->jawaban, true) ?? [];
+            $jawabanUser = $jawaban->jawaban;
 
             /*
             |--------------------------------------------------------------------------
@@ -537,7 +532,6 @@ class UserTryoutController extends Controller
             |--------------------------------------------------------------------------
             */
             if ($bankSoal->tipe === 'pg_kompleks') {
-
                 $pernyataan = BanksoalPernyataan::where('banksoal_id', $bankSoal->id)
                     ->orderBy('urutan')
                     ->get();
@@ -560,11 +554,12 @@ class UserTryoutController extends Controller
                 } elseif ($jumlahBenar === 2) {
                     $totalPoin += 0.2;
                 }
+                
             }
         }
-
+        
         $attempt->update([
-            'nilai' => $totalPoin
-        ]);
+                'nilai' => $totalPoin
+            ]);
     }
 }

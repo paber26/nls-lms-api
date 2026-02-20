@@ -15,6 +15,7 @@ class Attempt extends Model
         'mulai',
         'selesai',
         'status',
+        'nilai',
     ];
 
     protected $casts = [
