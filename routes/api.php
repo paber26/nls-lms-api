@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
         'kelas' => $user->kelas,
         'email' => $user->email,
         'avatar' => $user->avatar,
+        'role' => $user->role,
         'profil_lengkap' => $profilLengkap,
     ]);
 });
