@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
 use App\Http\Controllers\UploadController;
+use App\Http\Controllers\Api\UserController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -63,6 +64,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mapel', function () {
         return Mapel::select('id', 'nama', 'tingkat')->orderBy('nama')->get();
     });
+
+    Route::get('/users', [UserController::class, 'index']);
+    Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);
     Route::get('/banksoaltryout', [BankSoalController::class, 'listForTryout']);
