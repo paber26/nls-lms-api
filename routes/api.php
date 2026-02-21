@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankSoalController;
 use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
+use App\Http\Controllers\UploadController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -81,6 +82,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tryout/{id}/soal/{banksoalId}', [TryoutSoalController::class, 'destroy']);
     Route::put('/tryout/{id}/soal/urutan', [TryoutSoalController::class, 'updateUrutan']);
     Route::put('/tryout/{id}/soal/{banksoalId}/poin', [TryoutSoalController::class, 'updatePoin']);
+
+
+    Route::post('/upload-image', [UploadController::class, 'store']);
 
 
     // Route::get('/sekolah', function () {return \App\Models\Sekolah::orderBy('nama')->get();});
