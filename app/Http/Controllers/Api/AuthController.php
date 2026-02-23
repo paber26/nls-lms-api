@@ -28,7 +28,7 @@ class AuthController extends Controller
             ->stateless()
             ->user();
         
-        $role = request()->get('state', 'user');
+        // $role = request()->get('state', 'user');
             
         $user = User::where('google_id', $googleUser->id)
             ->orWhere('email', $googleUser->email)
@@ -50,7 +50,7 @@ class AuthController extends Controller
         }
         $token = $user->createToken('google-token')->plainTextToken;
         
-        if ($role === 'admin') {
+        if ($user->role === 'admin') {
             $frontendUrl = env('FRONTEND_ADMIN_URL') . '/oauth/callback';
         } else {
             $frontendUrl = env('FRONTEND_USER_URL') . '/oauth/callback';
