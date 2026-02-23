@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use PhpParser\Node\Expr\Print_;
 
 class AuthController extends Controller
@@ -40,7 +43,7 @@ class AuthController extends Controller
                 'email' => $googleUser->email,
                 'google_id' => $googleUser->id,
                 'avatar' => $googleUser->avatar,
-                'password' => bcrypt(Str::random(16)),
+                'password' => Hash::make(Str::random(16)),
             ]);
         } else {
             $user->update([
@@ -59,5 +62,27 @@ class AuthController extends Controller
         return redirect()->away(
             $frontendUrl . '?token=' . $token
         );
+    }
+
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required','email'],
+            'password' => ['required'],
+        ]);
+
+        if (!Auth::attempt($credentials)) {
+            return response()->json([
+                'message' => 'Email atau password salah'
+            ], 401);
+        }
+
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'token' => $token,
+            'user' => $user
+        ]);
     }
 }
