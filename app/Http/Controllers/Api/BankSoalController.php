@@ -12,9 +12,23 @@ use Illuminate\Support\Facades\DB;
 class BankSoalController extends Controller
 {
     // 🔹 GET /api/bank-soal
-    public function index()
+    public function index(Request $request)
     {
-        $data = BankSoal::with(['mapel', 'pembuat'])
+        $query = BankSoal::with(['mapel', 'pembuat']);
+
+        // 🔍 Filter by mapel (by name)
+        if ($request->filled('mapel')) {
+            $query->whereHas('mapel', function ($q) use ($request) {
+                $q->where('nama', $request->mapel);
+            });
+        }
+
+        // 🔍 Filter by status (if column exists)php artisan tinker
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $data = $query
             ->latest()
             ->get()
             ->map(function ($item) {

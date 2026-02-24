@@ -15,7 +15,8 @@ class Tryout extends Model
         'mulai',
         'selesai',
         'status',
-        'created_by'
+        'created_by',
+        'ketentuan_khusus',
     ];
 
     public function mapel()
