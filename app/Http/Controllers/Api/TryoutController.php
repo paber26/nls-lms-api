@@ -21,6 +21,8 @@ class TryoutController extends Controller
                     'mapel' => $item->mapel->nama ?? '-',
                     'status' => $item->status,
                     'pembuat' => $item->pembuat->name ?? '-',
+                    'mulai' => $item->mulai,
+                    'selesai' => $item->selesai,
                     'created_at' => $item->created_at->format('Y-m-d'),
                 ];
             });
