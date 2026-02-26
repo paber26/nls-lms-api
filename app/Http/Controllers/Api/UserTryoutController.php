@@ -68,6 +68,9 @@ class UserTryoutController extends Controller
                 'mapel' => $tryout->mapel->nama ?? '-',
                 'jumlah_soal' => $tryout->questions_count ?? 0,
                 'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
+                'mulai' => $tryout->mulai,
+                'selesai' => $tryout->selesai,
+                'ketentuan_khusus' => $tryout->ketentuan_khusus,
             ]
         ]);
     }

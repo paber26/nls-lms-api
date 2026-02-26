@@ -43,7 +43,6 @@ class AuthController extends Controller
                 'email' => $googleUser->email,
                 'google_id' => $googleUser->id,
                 'avatar' => $googleUser->avatar,
-                'password' => Hash::make(Str::random(16)),
             ]);
         } else {
             $user->update([
