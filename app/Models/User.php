@@ -32,7 +32,10 @@ class User extends Authenticatable
         'kecamatan',
         'whatsapp',
         'minat',
+        'password',
         'role',
+        'is_active',
+        'is_event_registered',
     ];
 
 
