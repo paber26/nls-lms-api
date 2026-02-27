@@ -64,4 +64,25 @@ class SekolahController extends Controller
             'data' => $sekolah
         ], 201);
     }
+
+    public function peserta(Request $request, $id)
+    {
+        $query = User::where('sekolah_id', $id);
+
+        // optional search
+        if ($request->has('search') && $request->search != '') {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%')
+                  ->orWhere('nama_lengkap', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $peserta = $query->orderBy('name')->paginate(20);
+
+        return response()->json([
+            'success' => true,
+            'data' => $peserta
+        ]);
+    }
 }

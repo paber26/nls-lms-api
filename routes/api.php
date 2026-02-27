@@ -105,6 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // routes/api.php
     Route::get('/sekolah', [SekolahController::class, 'index']);
     Route::get('/sekolah/{id}', [SekolahController::class, 'show']);
+    Route::get('/sekolah/{id}/peserta', [SekolahController::class, 'peserta']);
     Route::post('/sekolah', [SekolahController::class, 'store']);
 
     Route::post('/user/profile', [UserProfilController::class, 'store']);
@@ -120,5 +121,3 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
 });
-
-
