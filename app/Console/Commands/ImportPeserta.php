@@ -80,7 +80,7 @@ class ImportPeserta extends Command
             $success++;
 
             // Tampilkan progress setiap 100 baris
-            if ($lineNumber % 100 === 0) {
+            if ($lineNumber % 50 === 0) {
                 $this->line("Sedang memproses baris ke-{$lineNumber}...");
             }
         }

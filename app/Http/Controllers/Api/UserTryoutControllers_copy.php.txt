@@ -68,6 +68,9 @@ class UserTryoutController extends Controller
                 'mapel' => $tryout->mapel->nama ?? '-',
                 'jumlah_soal' => $tryout->questions_count ?? 0,
                 'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
+                'mulai' => $tryout->mulai,
+                'selesai' => $tryout->selesai,
+                'ketentuan_khusus' => $tryout->ketentuan_khusus,
             ]
         ]);
     }
@@ -128,110 +131,70 @@ class UserTryoutController extends Controller
         ]);
     }
     
-    public function questions(Request $request, $id)
+    public function questions($id)
     {
         $user = Auth::user();
-        $number = (int) $request->get('number', 1);
 
-        // pastikan attempt aktif
         $attempt = Attempt::where('tryout_id', $id)
             ->where('user_id', $user->id)
             ->whereNull('selesai')
             ->firstOrFail();
 
-        // ambil soal sesuai urutan
-        $tryoutSoal = TryoutSoal::where('tryout_id', $id)
+        $tryoutSoalList = TryoutSoal::where('tryout_id', $id)
             ->orderBy('urutan')
-            ->skip($number - 1)
-            ->firstOrFail();
-        
-        if (! $tryoutSoal) {
-            return response()->json([
-                'message' => 'Soal tidak ditemukan'
-            ], 404);
-        }
+            ->get();
 
-        
-        // return response()->json([
-        //     'data' => $tryoutSoal
-        // ]);
-        
+        $totalSoal = $tryoutSoalList->count();
 
-        // $tryoutSoal = TryoutSoal::where('tryout_id', $id)
-        //     ->orderBy('urutan')
-        //     ->get()
-        //     ->get($request->number - 1);
-            
-        // return $tryoutSoal;
-        // return $tryoutSoal->get($number - 1);
-        // return $request->number;
+        $result = [];
 
-        $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
-        // return $bankSoal;
+        foreach ($tryoutSoalList as $index => $tryoutSoal) {
 
-        $tipe = $bankSoal->tipe;
-        $opsi = null;   
+            $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
+            if (! $bankSoal) continue;
 
-        if ($tipe === 'pg') {
-            // pilihan ganda biasa → ambil dari opsi_jawaban
-            $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
-                ->orderBy('label')
-                ->get()
-                ->map(function ($o) {
-                    return [
+            $tipe = $bankSoal->tipe;
+            $opsi = null;
+
+            if ($tipe === 'pg') {
+                $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                    ->orderBy('label')
+                    ->get()
+                    ->map(fn($o) => [
                         'key' => $o->label,
                         'text' => $o->teks,
-                    ];
-                })
-                ->values();
-        }
-        // return $opsi;
+                    ])
+                    ->values();
+            }
 
-        if ($tipe === 'pg_kompleks') {
-            // pilihan ganda kompleks → ambil dari banksoal_pernyataan
-
-            $opsi = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
-                ->orderBy('urutan')
-                ->get()
-                ->map(function ($p) {
-                    return [
+            if ($tipe === 'pg_kompleks') {
+                $opsi = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
+                    ->orderBy('urutan')
+                    ->get()
+                    ->map(fn($p) => [
                         'key' => $p->urutan,
                         'text' => $p->teks,
-                    ];
-                })
-                ->values();
+                    ])
+                    ->values();
+            }
+
+            $jawaban = JawabanPeserta::where('attempt_id', $attempt->id)
+                ->where('banksoal_id', $bankSoal->id)
+                ->value('jawaban');
+
+            $result[] = [
+                'nomor'       => $index + 1,
+                'pertanyaan'  => $bankSoal->pertanyaan,
+                'tipe'        => $tipe,
+                'opsi'        => $opsi,
+                'jawaban'     => $jawaban ?? [],
+                'peserta'     => $user->name,
+                'total_soal'  => $totalSoal,
+            ];
         }
 
-        // return $opsi;
-
-        $totalSoal = TryoutSoal::where('tryout_id', $id)->count();
-
-        // return $totalSoal;
-
-
-        // ambil jawaban user jika ada
-        $jawaban = JawabanPeserta::where('attempt_id', $attempt->id)
-            ->where('banksoal_id', $bankSoal->id)
-            ->value('jawaban');
-        
-        // $jawaban = JawabanPeserta::where('attempt_id', $attempt->id)
-        //     ->where('banksoal_id', $bankSoal->id)
-        //     ->value('jawaban');
-
-            // return json_decode($jawaban, true);
-            // return $jawaban;
-            // return $attempt->id . ' - ' . $bankSoal->id;
-
         return response()->json([
-            'data' => [
-                'pertanyaan' => $bankSoal->pertanyaan,
-                'tipe' => $tipe,
-                'opsi' => $opsi,
-                // 'jawaban' => $jawaban ? json_decode($jawaban, true) : [],
-                'jawaban' => $jawaban ?? [],
-                'peserta' => $user->name,
-                'total_soal' => $totalSoal,
-            ]
+            'data' => $result
         ]);
     }
 

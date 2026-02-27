@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
 use App\Http\Controllers\Api\UserTryoutController;
+use App\Http\Controllers\Api\PesertaController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
 use App\Models\Mapel;
@@ -70,6 +71,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('/users', [UserController::class, 'index']);
+    Route::get('/peserta', [PesertaController::class, 'index']);
+    Route::get('/peserta/detail/{id}', [PesertaController::class, 'show']);
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);

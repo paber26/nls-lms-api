@@ -26,6 +26,7 @@ class User extends Authenticatable
         'google_id',
         'avatar',
         'sekolah_id',
+        'sekolah_nama',
         'kelas',
         'provinsi',
         'kota',
@@ -65,5 +66,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function sekolah()
+    {
+        return $this->belongsTo(\App\Models\Sekolah::class);
+    }
+
+    public function attempts()
+    {
+        return $this->hasMany(\App\Models\Attempt::class);
     }
 }
