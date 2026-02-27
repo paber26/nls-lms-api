@@ -17,4 +17,9 @@ class Sekolah extends Model
         'jenjang',
         'status',
     ];
+
+    public function users()
+    {
+        return $this->hasMany(User::class, 'sekolah_id');
+    }
 }

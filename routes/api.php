@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\TryoutController;
 use App\Http\Controllers\Api\TryoutSoalController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\SekolahController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -102,9 +103,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Route::get('/sekolah', function () {return \App\Models\Sekolah::orderBy('nama')->get();});
     // routes/api.php
-    Route::get('/sekolah', function () {
-        return Sekolah::orderBy('nama')->get();
-    });
+    Route::get('/sekolah', [SekolahController::class, 'index']);
+    Route::get('/sekolah/{id}', [SekolahController::class, 'show']);
+    Route::post('/sekolah', [SekolahController::class, 'store']);
 
     Route::post('/user/profile', [UserProfilController::class, 'store']);
 
