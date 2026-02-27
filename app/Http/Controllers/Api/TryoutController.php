@@ -48,7 +48,7 @@ class TryoutController extends Controller
             'selesai'       => $tryout->selesai,
             'status'        => $tryout->status,
             'ketentuan_khusus' => $tryout->ketentuan_khusus,
-
+            'pesan_selesai' => $tryout->pesan_selesai,
         ]);
     }
 
@@ -91,7 +91,8 @@ class TryoutController extends Controller
             'mulai'        => 'required|date',
             'selesai'      => 'required|date',
             'status'       => 'required|in:draft,active,finished',
-            'ketentuan_khusus' => 'nullable|string'
+            'ketentuan_khusus' => 'nullable|string',
+            'pesan_selesai' => 'nullable|string'
         ]);
 
         $tryout = Tryout::findOrFail($id);
@@ -105,6 +106,7 @@ class TryoutController extends Controller
             'status'       => $data['status'],
             'created_by'   => $request->user()?->id,
             'ketentuan_khusus' => $data['ketentuan_khusus'],
+            'pesan_selesai' => $data['pesan_selesai'],
         ]);
 
         return response()->json([
