@@ -28,24 +28,27 @@ class BankSoalController extends Controller
             $query->where('status', $request->status);
         }
 
-        $data = $query
+        $perPage = $request->get('per_page', 50);
+
+        $paginated = $query
             ->latest()
-            ->get()
-            ->map(function ($item) {
-                $jumlahTerpakai = DB::table('tryout_soal')
-                    ->where('banksoal_id', $item->id)
-                    ->count();
+            ->paginate($perPage);
 
-                return [
-                    'id' => $item->id,
-                    'pertanyaan' => $item->pertanyaan,
-                    'mapel' => $item->mapel->nama ?? '-',
-                    'pembuat' => $item->pembuat->name ?? '-',
-                    'jumlah_terpakai' => $jumlahTerpakai,
-                ];
-            });
+        $paginated->getCollection()->transform(function ($item) {
+            $jumlahTerpakai = DB::table('tryout_soal')
+                ->where('banksoal_id', $item->id)
+                ->count();
 
-        return response()->json($data);
+            return [
+                'id' => $item->id,
+                'pertanyaan' => $item->pertanyaan,
+                'mapel' => $item->mapel->nama ?? '-',
+                'pembuat' => $item->pembuat->name ?? '-',
+                'jumlah_terpakai' => $jumlahTerpakai,
+            ];
+        });
+
+        return response()->json($paginated);
     }
 
     /**
