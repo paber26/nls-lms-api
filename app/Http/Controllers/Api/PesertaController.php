@@ -4,40 +4,84 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class PesertaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $peserta = User::where('role', 'peserta')
-            ->with('sekolah') // pastikan ada relasi sekolah() di model User
+        $query = User::where('role', 'peserta')
+            ->with('sekolah');
+
+        // SEARCH (nama/email)
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_lengkap', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // FILTER SEKOLAH
+        if ($request->filled('sekolah')) {
+            $query->where('sekolah_nama', 'like', "%{$request->sekolah}%");
+        }
+
+        // FILTER KELAS
+        if ($request->filled('kelas')) {
+            $query->where('kelas', $request->kelas);
+        }
+
+        // FILTER STATUS PROFIL
+        if ($request->filled('status')) {
+            if ($request->status === 'Lengkap') {
+                $query->whereNotNull('nama_lengkap')
+                      ->whereNotNull('sekolah_id')
+                      ->whereNotNull('kelas')
+                      ->whereNotNull('whatsapp');
+            } else {
+                $query->where(function ($q) {
+                    $q->whereNull('nama_lengkap')
+                      ->orWhereNull('sekolah_id')
+                      ->orWhereNull('kelas')
+                      ->orWhereNull('whatsapp');
+                });
+            }
+        }
+
+        $perPage = $request->get('per_page', 10);
+
+        $peserta = $query
             ->select(
                 'id',
                 'nama_lengkap',
+                'email',
                 'sekolah_id',
                 'sekolah_nama',
                 'kelas',
                 'whatsapp'
             )
-            ->get()
-            ->map(function ($user) {
+            ->paginate($perPage);
 
-                $profilLengkap =
-                    !empty($user->nama_lengkap) &&
-                    !empty($user->sekolah_id) &&
-                    !empty($user->kelas) &&
-                    !empty($user->whatsapp);
+        $peserta->getCollection()->transform(function ($user) {
 
-                return [
-                    'id' => $user->id,
-                    'nama_lengkap' => $user->nama_lengkap,
-                    'sekolah' => optional($user->sekolah)->nama,
-                    'sekolah_nama' => $user->sekolah_nama,
-                    'kelas' => $user->kelas,
-                    'whatsapp' => $user->whatsapp,
-                    'status_profil' => $profilLengkap ? 'Lengkap' : 'Belum Lengkap',
-                ];
-            });
+            $profilLengkap =
+                !empty($user->nama_lengkap) &&
+                !empty($user->sekolah_id) &&
+                !empty($user->kelas) &&
+                !empty($user->whatsapp);
+
+            return [
+                'id' => $user->id,
+                'nama_lengkap' => $user->nama_lengkap,
+                'email' => $user->email,
+                'sekolah' => optional($user->sekolah)->nama,
+                'sekolah_nama' => $user->sekolah_nama,
+                'kelas' => $user->kelas,
+                'whatsapp' => $user->whatsapp,
+                'status_profil' => $profilLengkap ? 'Lengkap' : 'Belum Lengkap',
+            ];
+        });
 
         return response()->json($peserta);
     }
