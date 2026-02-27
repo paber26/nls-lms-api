@@ -12,6 +12,7 @@ class TryoutController extends Controller
     public function index()
     {
         $data = Tryout::with(['mapel', 'pembuat'])
+            ->withCount(['questions as total_soal'])
             ->latest()
             ->get()
             ->map(function ($item) {
@@ -19,6 +20,7 @@ class TryoutController extends Controller
                     'id' => $item->id,
                     'paket' => $item->paket,
                     'mapel' => $item->mapel->nama ?? '-',
+                    'total_soal' => $item->total_soal ?? 0,
                     'status' => $item->status,
                     'pembuat' => $item->pembuat->name ?? '-',
                     'mulai' => $item->mulai,

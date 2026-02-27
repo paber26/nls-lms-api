@@ -63,6 +63,8 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     ]);
 });
 
+    // Route::get('/tryout', [TryoutController::class, 'index']);
+
 // Route::apiResource('banksoal', BankSoalController::class);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('banksoal', BankSoalController::class);

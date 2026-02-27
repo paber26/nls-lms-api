@@ -34,8 +34,8 @@ class Tryout extends Model
     {
         return $this->hasMany(
             TryoutSoal::class,
-            'tryout_id', // FK di tryout_soal
-            'id'         // PK di tryout
+            'tryout_id',
+            'id'
         );
     }
 
@@ -44,7 +44,7 @@ class Tryout extends Model
     {
         return $this->hasMany(
             Attempt::class,
-            'tryout_id', // FK di attempt
+            'tryout_id',
             'id'
         );
     }
