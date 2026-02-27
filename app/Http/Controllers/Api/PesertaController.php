@@ -59,8 +59,10 @@ class PesertaController extends Controller
                 'sekolah_id',
                 'sekolah_nama',
                 'kelas',
-                'whatsapp'
+                'whatsapp',
+                'created_at'
             )
+            ->orderBy('created_at', 'desc')
             ->paginate($perPage);
 
         $peserta->getCollection()->transform(function ($user) {
