@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\TryoutSoalController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\SekolahController;
+use App\Http\Controllers\Api\MonitoringTryoutController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -34,6 +35,9 @@ Route::get('/wilayah/kecamatan/{kabupatenId}', [WilayahController::class, 'kecam
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::post('/login', [AuthController::class, 'login']);
+
+    Route::get('/monitoring-tryout', [MonitoringTryoutController::class, 'index']);
+
 
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     $user = $request->user();
@@ -90,6 +94,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tryout/{id}', [TryoutController::class, 'show']);
     Route::put('/tryout/{id}', [TryoutController::class, 'update']);
 
+    // Route::get('/monitoring-tryout', [MonitoringTryoutController::class, 'index']);
+    
     Route::get('/tryout/{id}/soal', [TryoutSoalController::class, 'index']);
     Route::get('/tryout/{id}/soal-detail', [TryoutSoalController::class, 'indexDetail']);
     Route::post('/tryout/{id}/soal', [TryoutSoalController::class, 'store']);
