@@ -36,9 +36,6 @@ Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::post('/login', [AuthController::class, 'login']);
 
-Route::get('/monitoring-tryout/{id}', [MonitoringTryoutController::class, 'show']);
-
-
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     $user = $request->user();
 
@@ -80,6 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::get('/peserta', [PesertaController::class, 'index']);
     Route::get('/peserta/detail/{id}', [PesertaController::class, 'show']);
+    Route::post('/peserta', [PesertaController::class, 'store']);
     Route::put('/users/{id}/role', [UserController::class, 'updateRole']);
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);
@@ -95,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tryout/{id}', [TryoutController::class, 'update']);
 
     Route::get('/monitoring-tryout', [MonitoringTryoutController::class, 'index']);
-    // Route::get('/monitoring-tryout/{id}', [MonitoringTryoutController::class, 'show']);
+    Route::get('/monitoring-tryout/{id}', [MonitoringTryoutController::class, 'show']);
     
     Route::get('/tryout/{id}/soal', [TryoutSoalController::class, 'index']);
     Route::get('/tryout/{id}/soal-detail', [TryoutSoalController::class, 'indexDetail']);

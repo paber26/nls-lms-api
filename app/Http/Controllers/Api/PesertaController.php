@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class PesertaController extends Controller
 {
@@ -121,5 +122,34 @@ class PesertaController extends Controller
                 ];
             }),
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'sekolah_id' => 'required|exists:sekolah,id',
+            'nama_lengkap' => 'required|string|max:255',
+            'kelas' => 'required|string|max:10',
+            'email' => 'required|email|unique:users,email',
+            'whatsapp' => 'required|string|max:20',
+        ]);
+
+        $user = User::create([
+            'sekolah_id' => $validated['sekolah_id'],
+            'name' => $validated['nama_lengkap'],
+            'nama_lengkap' => $validated['nama_lengkap'],
+            'kelas' => $validated['kelas'],
+            'email' => $validated['email'],
+            'whatsapp' => $validated['whatsapp'],
+            'password' => Hash::make($validated['whatsapp']),
+            'role' => 'peserta',
+            'is_active' => 1,
+            'is_event_registered' => 1,
+        ]);
+
+        return response()->json([
+            'message' => 'Peserta berhasil ditambahkan',
+            'data' => $user
+        ], 201);
     }
 }
