@@ -108,7 +108,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sekolah/{id}/peserta', [SekolahController::class, 'peserta']);
     Route::post('/sekolah', [SekolahController::class, 'store']);
 
+    Route::get('/user/profile', [UserProfilController::class, 'profile']);
     Route::post('/user/profile', [UserProfilController::class, 'store']);
+    Route::put('/user/profile', [UserProfilController::class, 'updateProfile']);
 
     Route::get('/user/tryout', [UserTryoutController::class, 'index']);
     Route::get('/user/tryout/{id}', [UserTryoutController::class, 'show']);

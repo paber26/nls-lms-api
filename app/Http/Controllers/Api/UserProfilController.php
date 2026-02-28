@@ -32,4 +32,54 @@ class UserProfilController extends Controller
             'message' => 'Profil peserta berhasil disimpan'
         ]);
     }
+
+    public function profile(Request $request)
+    {
+        // return 'oke';
+        $user = $request->user();
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'nama_lengkap' => $user->nama_lengkap,
+            'email' => $user->email,
+            'sekolah_id' => $user->sekolah_id,
+            'sekolah_nama' => $user->sekolah_nama,
+            'kelas' => $user->kelas,
+            'whatsapp' => $user->whatsapp,
+            'provinsi' => $user->provinsi,
+            'kota' => $user->kota,
+            'kecamatan' => $user->kecamatan,
+            'minat' => $user->minat,
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user(); // user yang sedang login
+
+        $request->validate([
+            'nama_lengkap' => 'required|string|max:255',
+            'kelas' => 'required|string|max:50',
+            'whatsapp' => 'required|string|max:20',
+            'provinsi' => 'required|string',
+            'kota' => 'required|string',
+            'kecamatan' => 'required|string',
+        ]);
+
+        $user->update([
+            'nama_lengkap' => $request->nama_lengkap,
+            'kelas' => $request->kelas,
+            'whatsapp' => $request->whatsapp,
+            'provinsi' => $request->provinsi,
+            'kota' => $request->kota,
+            'kecamatan' => $request->kecamatan,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profil berhasil diperbarui',
+            'data' => $user
+        ]);
+    }
 }
