@@ -36,7 +36,7 @@ class MonitoringTryoutController extends Controller
     public function show($id)
     {
         $participants = Attempt::with([
-                'user:id,name,email,sekolah_id,sekolah_nama',
+                'user:id,name,email,whatsapp,sekolah_id,sekolah_nama',
                 'user.sekolah:id,nama'
             ])
             ->where('tryout_id', $id)
@@ -47,6 +47,7 @@ class MonitoringTryoutController extends Controller
                     'id' => $attempt->id,
                     'name' => $attempt->user->name ?? '-',
                     'email' => $attempt->user->email ?? '-',
+                    'whatsapp' => $attempt->user->whatsapp ?? '-',
                     'sekolah_nama' => $attempt->user->sekolah->nama ?? ($attempt->user->sekolah_nama ?? '-'),
                     'status' => $attempt->status,
                     'nilai' => $attempt->nilai,
