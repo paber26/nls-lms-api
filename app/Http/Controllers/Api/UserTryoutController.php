@@ -450,6 +450,23 @@ class UserTryoutController extends Controller
                 }
             }
 
+            /*
+            |--------------------------------------------------------------------------
+            | PG MAJEMUK → jumlahkan poin tiap opsi (bisa negatif)
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'pg_majemuk' && is_array($jawabanUser)) {
+
+                $opsiList = OpsiJawaban::where('soal_id', $bankSoal->id)->get();
+
+                foreach ($opsiList as $opsi) {
+
+                    if (in_array($opsi->label, $jawabanUser)) {
+                        $nilaiPoin += (float) ($opsi->poin ?? 0);
+                    }
+                }
+            }
+
             $navigasi[] = [
                 'nomor'  => $index + 1,
                 'status' => $status,
