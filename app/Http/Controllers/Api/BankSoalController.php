@@ -106,8 +106,8 @@ class BankSoalController extends Controller
             ]);
 
 
-            // 2️⃣ Jika PG → simpan opsi
-            if ($request->tipe === 'pg') {
+            // 2️⃣ Jika PG atau PG Majemuk → simpan opsi
+            if (in_array($request->tipe, ['pg', 'pg_majemuk'])) {
                 $idOpsiBenar = null;
 
                 foreach ($request->opsi_jawaban as $index => $opsi) {
@@ -119,15 +119,17 @@ class BankSoalController extends Controller
                         'is_correct' => $opsi['is_correct'] ?? false,
                     ]);
 
-                    if (!empty($opsi['is_correct'])) {
+                    if ($request->tipe === 'pg' && !empty($opsi['is_correct'])) {
                         $idOpsiBenar = $row->id;
                     }
                 }
 
-                // 3️⃣ Update idopsijawaban di banksoal
-                $soal->update([
-                    'idopsijawaban' => $idOpsiBenar
-                ]);
+                // 3️⃣ Update idopsijawaban hanya untuk PG tunggal
+                if ($request->tipe === 'pg') {
+                    $soal->update([
+                        'idopsijawaban' => $idOpsiBenar
+                    ]);
+                }
             }
             
 
@@ -198,7 +200,7 @@ class BankSoalController extends Controller
 
         $request->validate([
             'mapel_id' => 'required|exists:mapel,id',
-            'tipe' => 'required|in:pg,isian,pg_kompleks',
+            'tipe' => 'required|in:pg,pg_majemuk,isian,pg_kompleks',
             'pertanyaan' => 'required|string',
             'pembahasan' => 'nullable|string',
             'jawaban_isian' => 'nullable|string',
@@ -222,8 +224,8 @@ class BankSoalController extends Controller
                 'idopsijawaban' => null,
             ]);
 
-            // hapus opsi lama jika PG
-            if ($request->tipe === 'pg') {
+            // hapus opsi lama jika PG atau PG Majemuk
+            if (in_array($request->tipe, ['pg', 'pg_majemuk'])) {
                 OpsiJawaban::where('soal_id', $bankSoal->id)->delete();
 
                 $idOpsiBenar = null;
@@ -237,14 +239,16 @@ class BankSoalController extends Controller
                         'is_correct' => $opsi['is_correct'] ?? false,
                     ]);
 
-                    if (!empty($opsi['is_correct'])) {
+                    if ($request->tipe === 'pg' && !empty($opsi['is_correct'])) {
                         $idOpsiBenar = $row->id;
                     }
                 }
 
-                $bankSoal->update([
-                    'idopsijawaban' => $idOpsiBenar
-                ]);
+                if ($request->tipe === 'pg') {
+                    $bankSoal->update([
+                        'idopsijawaban' => $idOpsiBenar
+                    ]);
+                }
             }
 
             // hapus pernyataan lama jika PG Kompleks
