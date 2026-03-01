@@ -204,7 +204,10 @@ class BankSoalController extends Controller
             'pertanyaan' => 'required|string',
             'pembahasan' => 'nullable|string',
             'jawaban_isian' => 'nullable|string',
-            'opsi_jawaban' => 'array',
+            'opsi_jawaban' => 'required_if:tipe,pg,pg_majemuk|array',
+            'opsi_jawaban.*.text' => 'required_if:tipe,pg,pg_majemuk|string',
+            'opsi_jawaban.*.poin' => 'nullable|numeric',
+            'opsi_jawaban.*.is_correct' => 'nullable|boolean',
         ]);
 
         DB::beginTransaction();
@@ -226,19 +229,24 @@ class BankSoalController extends Controller
 
             // hapus opsi lama jika PG atau PG Majemuk
             if (in_array($request->tipe, ['pg', 'pg_majemuk'])) {
+
+                // pastikan pernyataan kompleks dihapus jika sebelumnya tipe lain
+                $bankSoal->pernyataanKompleks()->delete();
+
                 OpsiJawaban::where('soal_id', $bankSoal->id)->delete();
 
                 $idOpsiBenar = null;
 
                 foreach ($request->opsi_jawaban as $index => $opsi) {
                     $row = OpsiJawaban::create([
-                        'soal_id' => $bankSoal->id,
-                        'label' => chr(65 + $index),
-                        'teks' => $opsi['text'],
-                        'poin' => $opsi['poin'] ?? 0,
+                        'soal_id'    => $bankSoal->id,
+                        'label'      => chr(65 + $index),
+                        'teks'       => $opsi['text'],
+                        'poin'       => $opsi['poin'] ?? 0,
                         'is_correct' => $opsi['is_correct'] ?? false,
                     ]);
 
+                    // hanya PG tunggal yang menyimpan idopsijawaban
                     if ($request->tipe === 'pg' && !empty($opsi['is_correct'])) {
                         $idOpsiBenar = $row->id;
                     }
@@ -251,15 +259,19 @@ class BankSoalController extends Controller
                 }
             }
 
-            // hapus pernyataan lama jika PG Kompleks
-            if ($request->tipe === 'pg_kompleks') {
+            // jika tipe bukan pg_kompleks, pastikan pernyataan lama dihapus
+            if ($request->tipe !== 'pg_kompleks') {
                 $bankSoal->pernyataanKompleks()->delete();
+            }
+
+            // jika PG Kompleks → simpan pernyataan baru
+            if ($request->tipe === 'pg_kompleks') {
+                OpsiJawaban::where('soal_id', $bankSoal->id)->delete();
 
                 foreach ($request->pernyataan as $index => $item) {
                     BankSoalPernyataan::create([
                         'banksoal_id'   => $bankSoal->id,
-                        'urutan'     
-                           => $index + 1,
+                        'urutan'        => $index + 1,
                         'teks'          => $item['text'],
                         'jawaban_benar' => $item['jawaban'],
                     ]);

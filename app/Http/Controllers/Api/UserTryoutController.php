@@ -156,12 +156,12 @@ class UserTryoutController extends Controller
             $tipe = $bankSoal->tipe;
             $opsi = null;
 
-            if ($tipe === 'pg') {
+            if (in_array($tipe, ['pg', 'pg_majemuk'])) {
                 $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
                     ->orderBy('label')
                     ->get()
                     ->map(fn($o) => [
-                        'key' => $o->label,
+                        'key'  => $o->label,
                         'text' => $o->teks,
                     ])
                     ->values();
@@ -258,6 +258,35 @@ class UserTryoutController extends Controller
             } else {
                 $isCorrect = 0;
             }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | PG MAJEMUK
+        |--------------------------------------------------------------------------
+        */
+        if ($bankSoal->tipe === 'pg_majemuk') {
+
+            $jawabanUser = array_values($request->jawaban ?? []);
+
+            $opsiList = OpsiJawaban::where('soal_id', $bankSoal->id)
+                ->orderBy('label')
+                ->get();
+
+            $jumlahBenar = 0;
+            $totalBenar = $opsiList->where('is_correct', 1)->count();
+
+            foreach ($opsiList as $opsi) {
+                if (
+                    in_array($opsi->label, $jawabanUser) &&
+                    (int) $opsi->is_correct === 1
+                ) {
+                    $jumlahBenar++;
+                }
+            }
+
+            // benar penuh jika semua jawaban benar dipilih
+            $isCorrect = ($jumlahBenar === $totalBenar && count($jawabanUser) === $totalBenar) ? 1 : 0;
         }
 
         /*
@@ -552,6 +581,27 @@ class UserTryoutController extends Controller
                     $totalPoin += 0.6;
                 } elseif ($jumlahBenar === $totalPernyataan - 2) {
                     $totalPoin += 0.2;
+                }
+            }
+
+                /*
+            |--------------------------------------------------------------------------
+            | PILIHAN GANDA MAJEMUK → jumlahkan poin tiap opsi yang dipilih (bisa negatif)
+            |--------------------------------------------------------------------------
+            */
+            if ($bankSoal->tipe === 'pg_majemuk') {
+
+                $opsiList = OpsiJawaban::where('soal_id', $bankSoal->id)->get();
+                $jawabanUser = $jawabanUser ?? [];
+
+                foreach ($opsiList as $opsi) {
+
+                    if (in_array($opsi->label, $jawabanUser)) {
+
+                        // tambahkan poin sesuai nilai di database
+                        // (bisa positif atau negatif)
+                        $totalPoin += (float) ($opsi->poin ?? 0);
+                    }
                 }
             }
         }
