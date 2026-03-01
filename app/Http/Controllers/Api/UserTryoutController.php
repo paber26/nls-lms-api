@@ -201,7 +201,7 @@ class UserTryoutController extends Controller
     public function answer(Request $request, $id)
     {
         $request->validate([
-            'nomor' => 'required|integer|min:1',
+            'nomor'   => 'required|integer|min:1',
             'jawaban' => 'array'
         ]);
 
@@ -217,17 +217,19 @@ class UserTryoutController extends Controller
             ->skip($request->nomor - 1)
             ->firstOrFail();
         
-        $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
+        $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
 
         $isCorrect = null;
-        $jawabanUser = array_values($request->jawaban);
+        $jawabanUser = [];
 
         /*
         |--------------------------------------------------------------------------
-        | Tentukan is_correct sesuai tipe soal
+        | ISIAN
         |--------------------------------------------------------------------------
         */
         if ($bankSoal->tipe === 'isian') {
+            $jawabanUser = array_values($request->jawaban ?? []);
+
             if (
                 isset($bankSoal->jawaban) &&
                 isset($jawabanUser[0]) &&
@@ -239,7 +241,14 @@ class UserTryoutController extends Controller
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PG
+        |--------------------------------------------------------------------------
+        */
         if ($bankSoal->tipe === 'pg') {
+            $jawabanUser = array_values($request->jawaban ?? []);
+
             if (isset($jawabanUser[0])) {
                 $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
                     ->where('label', $jawabanUser[0])
@@ -251,23 +260,38 @@ class UserTryoutController extends Controller
             }
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | PG KOMPLEKS → isi null jika tidak dijawab
+        |--------------------------------------------------------------------------
+        */
         if ($bankSoal->tipe === 'pg_kompleks') {
+
             $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
                 ->orderBy('urutan')
                 ->get();
 
+            $answermap = $request->jawaban ?? [];
             $jumlahBenar = 0;
-            
-            foreach ($pernyataan as $p) {
-                if (
-                    isset($jawabanUser[((int) $p->urutan) - 1]) &&
-                    (int) $jawabanUser[((int) $p->urutan) - 1] === (int) $p->jawaban_benar
-                ) {
-                    $jumlahBenar++;
+
+            foreach ($pernyataan as $index => $p) {
+                $key = (string) $p->urutan;
+
+                if (array_key_exists($key, $answermap)) {
+                    $value = (int) $answermap[$key];
+                    $jawabanUser[] = (string) $value;
+
+                    if ($value === (int) $p->jawaban_benar) {
+                        $jumlahBenar++;
+                    }
+                } else {
+                    // tidak dijawab → simpan null
+                    $jawabanUser[] = null;
                 }
             }
-            // pg kompleks dianggap benar jika semua pernyataan benar
-            $isCorrect = ($jumlahBenar === 4) ? 1 : 0;
+
+            // benar penuh jika semua pernyataan benar
+            $isCorrect = ($jumlahBenar === $pernyataan->count()) ? 1 : 0;
         }
 
         JawabanPeserta::updateOrCreate(
@@ -280,7 +304,6 @@ class UserTryoutController extends Controller
                 'is_correct' => $isCorrect,
             ]
         );
-        
 
         return response()->json([
             'message' => 'Jawaban tersimpan'
@@ -508,24 +531,28 @@ class UserTryoutController extends Controller
                     ->get();
 
                 $jumlahBenar = 0;
+                $totalPernyataan = $pernyataan->count();
 
                 foreach ($pernyataan as $p) {
+                    $index = ((int) $p->urutan) - 1; // karena array 0-based
+
                     if (
-                        isset($jawabanUser[$p->urutan]) &&
-                        (int) $jawabanUser[$p->urutan] === (int) $p->jawaban_benar
+                        array_key_exists($index, $jawabanUser) &&
+                        $jawabanUser[$index] !== null &&
+                        (int) $jawabanUser[$index] === (int) $p->jawaban_benar
                     ) {
                         $jumlahBenar++;
                     }
                 }
 
-                if ($jumlahBenar === 4) {
+                // aturan nasional dinamis berdasarkan total pernyataan
+                if ($jumlahBenar === $totalPernyataan) {
                     $totalPoin += 1.0;
-                } elseif ($jumlahBenar === 3) {
+                } elseif ($jumlahBenar === $totalPernyataan - 1) {
                     $totalPoin += 0.6;
-                } elseif ($jumlahBenar === 2) {
+                } elseif ($jumlahBenar === $totalPernyataan - 2) {
                     $totalPoin += 0.2;
                 }
-                
             }
         }
         

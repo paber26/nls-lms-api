@@ -89,7 +89,6 @@ class BankSoalController extends Controller
     {
         DB::beginTransaction();
 
-
         try {
             // 1️⃣ Simpan soal utama
             $soal = BankSoal::create([
@@ -173,6 +172,7 @@ class BankSoalController extends Controller
         return response()->json([
             'id' => $bankSoal->id, 
             'mapel_id' => $bankSoal->mapel_id,
+            'mapel_nama' => $bankSoal->mapel?->nama,
             'tipe' => $bankSoal->tipe,
             'pertanyaan' => $bankSoal->pertanyaan,
             'pembahasan' => $bankSoal->pembahasan,

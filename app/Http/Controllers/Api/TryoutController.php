@@ -9,23 +9,31 @@ use Illuminate\Http\Request;
 class TryoutController extends Controller
 {
     // 🔹 GET /api/tryout
-    public function index()
+    public function index(Request $request)
     {
-        $data = Tryout::with(['mapel', 'pembuat'])
-            ->withCount(['questions as total_soal'])
+        $query = Tryout::with(['mapel', 'pembuat'])
+            ->withCount(['questions as total_soal']);
+
+        // 🔹 Filter berdasarkan mapel_id
+        if ($request->filled('mapel_id')) {
+            $query->where('mapel_id', $request->mapel_id);
+        }
+
+        $data = $query
             ->latest()
             ->get()
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'paket' => $item->paket,
+                    'mapel_id' => $item->mapel_id,
                     'mapel' => $item->mapel->nama ?? '-',
                     'total_soal' => $item->total_soal ?? 0,
                     'status' => $item->status,
                     'pembuat' => $item->pembuat->name ?? '-',
                     'mulai' => $item->mulai,
                     'selesai' => $item->selesai,
-                    'created_at' => $item->created_at->format('Y-m-d'),
+                    'created_at' => optional($item->created_at)->format('Y-m-d'),
                 ];
             });
 
