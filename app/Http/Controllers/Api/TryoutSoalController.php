@@ -106,9 +106,10 @@ class TryoutSoalController extends Controller
                 }
 
                 // ======================
-                // PG BIASA
+                // PG & PG MAJEMUK
                 // ======================
-                if ($banksoal->tipe === 'pg') {
+                if (in_array($banksoal->tipe, ['pg', 'pg_majemuk'])) {
+
                     $opsi = $banksoal->opsiJawaban;
 
                     $result['opsi'] = $opsi->map(fn ($o) => [
@@ -118,9 +119,20 @@ class TryoutSoalController extends Controller
                         'poin'       => $o->poin,
                     ])->values();
 
-                    $result['kunci'] = optional(
-                        $opsi->firstWhere('is_correct', 1)
-                    )->label;
+                    // hanya PG tunggal yang punya 1 kunci
+                    if ($banksoal->tipe === 'pg') {
+                        $result['kunci'] = optional(
+                            $opsi->firstWhere('is_correct', 1)
+                        )->label;
+                    }
+
+                    // untuk pg_majemuk kirim daftar label benar
+                    if ($banksoal->tipe === 'pg_majemuk') {
+                        $result['kunci_majemuk'] = $opsi
+                            ->where('is_correct', 1)
+                            ->pluck('label')
+                            ->values();
+                    }
                 }
 
                 // ======================
