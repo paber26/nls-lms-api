@@ -39,6 +39,9 @@ class MonitoringTryoutController extends Controller
                 'user:id,name,email,whatsapp,sekolah_id,sekolah_nama',
                 'user.sekolah:id,nama'
             ])
+            ->withCount([
+                'jawabanPeserta as jawaban_count'
+            ])
             ->where('tryout_id', $id)
             ->orderByDesc('created_at')
             ->get()
@@ -53,6 +56,7 @@ class MonitoringTryoutController extends Controller
                     'nilai' => $attempt->nilai,
                     'mulai' => $attempt->mulai,
                     'selesai' => $attempt->selesai,
+                    'jawaban_count' => $attempt->jawaban_count ?? 0,
                 ];
             });
 
