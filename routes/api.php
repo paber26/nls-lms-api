@@ -12,6 +12,7 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\MonitoringTryoutController;
+use App\Http\Controllers\Api\LeaderboardController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -95,6 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/monitoring-tryout', [MonitoringTryoutController::class, 'index']);
     Route::get('/monitoring-tryout/{id}', [MonitoringTryoutController::class, 'show']);
     Route::post('/monitoring-tryout/{attemptId}/force-finish', [MonitoringTryoutController::class, 'forceFinish']);
+    Route::get('/leaderboard/tryouts', [LeaderboardController::class, 'tryouts']);
+    Route::get('/leaderboard/{tryoutId}', [LeaderboardController::class, 'leaderboard']);
     
     Route::get('/tryout/{id}/soal', [TryoutSoalController::class, 'index']);
     Route::get('/tryout/{id}/soal-detail', [TryoutSoalController::class, 'indexDetail']);
