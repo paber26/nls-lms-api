@@ -98,6 +98,7 @@ class PesertaController extends Controller
 
         return response()->json([
             'id' => $peserta->id,
+            'name' => $peserta->name,
             'nama_lengkap' => $peserta->nama_lengkap,
             'email' => $peserta->email,
             'kelas' => $peserta->kelas,
@@ -107,6 +108,7 @@ class PesertaController extends Controller
             'kecamatan' => $peserta->kecamatan,
             'role' => $peserta->role,
             'is_event_registered' => $peserta->is_event_registered,
+            'created_at' => $peserta->created_at,
             'sekolah' => $peserta->sekolah ? [
                 'id' => $peserta->sekolah->id,
                 'nama' => $peserta->sekolah->nama,
@@ -152,6 +154,42 @@ class PesertaController extends Controller
             'data' => $user
         ], 201);
     }
+
+    public function updatePassword(Request $request, $id)
+    {
+        try {
+
+            $validated = $request->validate([
+                'password' => 'required|string|min:6'
+            ]);
+
+            $user = User::findOrFail($id);
+
+            $user->password = Hash::make($validated['password']);
+            $user->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password peserta berhasil diperbarui'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Password minimal 6 karakter',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat memperbarui password'
+            ], 500);
+        }
+    }
+
     public function toggleEvent($id)
     {
         $user = User::findOrFail($id);
