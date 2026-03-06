@@ -48,7 +48,7 @@ class MonitoringTryoutController extends Controller
                 'jawabanPeserta as jawaban_count'
             ])
             ->where('tryout_id', $id)
-            ->orderByDesc('created_at')
+                ->orderByDesc('created_at')
             ->get()
             ->map(function ($attempt) {
                 $user = $attempt->user;
