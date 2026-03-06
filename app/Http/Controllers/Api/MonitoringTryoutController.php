@@ -9,6 +9,7 @@ use App\Models\TryoutSoal;
 use App\Models\BankSoalPernyataan;
 use App\Models\OpsiJawaban;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 
 class MonitoringTryoutController extends Controller
 {
@@ -39,46 +40,61 @@ class MonitoringTryoutController extends Controller
     
     public function show($id)
     {
-        $participants = Attempt::with([
-                'user:id,name,email,whatsapp,sekolah_id,sekolah_nama',
-                'user.sekolah:id,nama',
-                'jawabanPeserta:id,attempt_id,banksoal_id'
-            ])
-            ->withCount([
-                'jawabanPeserta as jawaban_count'
-            ])
-            ->where('tryout_id', $id)
+        try {
+            $urutanByBanksoal = TryoutSoal::where('tryout_id', $id)
+                ->pluck('urutan', 'banksoal_id');
+
+            $participants = Attempt::with([
+                    'user:id,name,email,whatsapp,sekolah_id,sekolah_nama',
+                    'user.sekolah:id,nama',
+                    'jawabanPeserta:id,attempt_id,banksoal_id'
+                ])
+                ->withCount([
+                    'jawabanPeserta as jawaban_count'
+                ])
+                ->where('tryout_id', $id)
                 ->orderByDesc('created_at')
-            ->get()
-            ->map(function ($attempt) {
-                $user = $attempt->user;
-                $sekolahNama = $user?->sekolah?->nama ?? $user?->sekolah_nama ?? '-';
+                ->get()
+                ->map(function ($attempt) use ($urutanByBanksoal) {
+                    $user = $attempt->user;
+                    $sekolahNama = $user?->sekolah?->nama ?? $user?->sekolah_nama ?? '-';
 
-                return [
-                    'id' => $attempt->id,
-                    'name' => $user?->name ?? '-',
-                    'email' => $user?->email ?? '-',
-                    'whatsapp' => $user?->whatsapp ?? '-',
-                    'sekolah_nama' => $sekolahNama,
-                    'status' => $attempt->status,
-                    'nilai' => $attempt->nilai,
-                    'mulai' => $attempt->mulai,
-                    'selesai' => $attempt->selesai,
-                    'jawaban_count' => $attempt->jawaban_count ?? 0,
-                    'answered_numbers' => $attempt->jawabanPeserta->isNotEmpty()
-                        ? TryoutSoal::where('tryout_id', $attempt->tryout_id)
-                            ->whereIn(
-                                'banksoal_id',
-                                $attempt->jawabanPeserta->pluck('banksoal_id')
-                            )
-                            ->orderBy('urutan')
-                            ->pluck('urutan')
-                            ->values()
-                        : [],
-                ];
-            });
+                    $answeredNumbers = $attempt->jawabanPeserta
+                        ->pluck('banksoal_id')
+                        ->map(fn ($banksoalId) => $urutanByBanksoal->get($banksoalId))
+                        ->filter(fn ($urutan) => $urutan !== null)
+                        ->unique()
+                        ->sort()
+                        ->values();
 
-        return response()->json($participants);
+                    return [
+                        'id' => $attempt->id,
+                        'name' => $user?->name ?? '-',
+                        'email' => $user?->email ?? '-',
+                        'whatsapp' => $user?->whatsapp ?? '-',
+                        'sekolah_nama' => $sekolahNama,
+                        'status' => $attempt->status,
+                        'nilai' => $attempt->nilai,
+                        'mulai' => $attempt->mulai,
+                        'selesai' => $attempt->selesai,
+                        'jawaban_count' => $attempt->jawaban_count ?? 0,
+                        'answered_numbers' => $answeredNumbers,
+                    ];
+                });
+
+            return response()->json($participants);
+        } catch (\Throwable $e) {
+            Log::error('Gagal memuat monitoring tryout', [
+                'tryout_id' => $id,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'message' => 'Gagal memuat data monitoring tryout.',
+            ], 500);
+        }
     }
 
     public function forceFinish($attemptId)
