@@ -51,12 +51,15 @@ class MonitoringTryoutController extends Controller
             ->orderByDesc('created_at')
             ->get()
             ->map(function ($attempt) {
+                $user = $attempt->user;
+                $sekolahNama = $user?->sekolah?->nama ?? $user?->sekolah_nama ?? '-';
+
                 return [
                     'id' => $attempt->id,
-                    'name' => $attempt->user->name ?? '-',
-                    'email' => $attempt->user->email ?? '-',
-                    'whatsapp' => $attempt->user->whatsapp ?? '-',
-                    'sekolah_nama' => $attempt->user->sekolah->nama ?? ($attempt->user->sekolah_nama ?? '-'),
+                    'name' => $user?->name ?? '-',
+                    'email' => $user?->email ?? '-',
+                    'whatsapp' => $user?->whatsapp ?? '-',
+                    'sekolah_nama' => $sekolahNama,
                     'status' => $attempt->status,
                     'nilai' => $attempt->nilai,
                     'mulai' => $attempt->mulai,
@@ -207,14 +210,14 @@ class MonitoringTryoutController extends Controller
         return response()->json([
             'tryout' => [
                 'id' => $attempt->tryout_id,
-                'nama' => $attempt->tryout->paket ?? '-',
+                'nama' => $attempt->tryout?->paket ?? '-',
             ],
             'participant' => [
-                'id' => $attempt->user->id ?? $attempt->user_id,
-                'name' => $attempt->user->name ?? '-',
-                'email' => $attempt->user->email ?? '-',
-                'sekolah_nama' => $attempt->user->sekolah_nama ?? '-',
-                'nama_tryout' => $attempt->tryout->paket ?? '-',
+                'id' => $attempt->user?->id ?? $attempt->user_id,
+                'name' => $attempt->user?->name ?? '-',
+                'email' => $attempt->user?->email ?? '-',
+                'sekolah_nama' => $attempt->user?->sekolah_nama ?? '-',
+                'nama_tryout' => $attempt->tryout?->paket ?? '-',
                 'mulai' => optional($mulai)->toISOString(),
                 'selesai' => optional($selesai)->toISOString(),
                 'durasi_menit' => $durasiMenit,
