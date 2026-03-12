@@ -100,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/monitoring-tryout/{id}', [MonitoringTryoutController::class, 'show']);
     Route::get('/monitoring-tryout/{tryoutId}/peserta/{participantId}/hasil', [MonitoringTryoutController::class, 'hasilPeserta']);
     Route::post('/monitoring-tryout/{attemptId}/force-finish', [MonitoringTryoutController::class, 'forceFinish']);
+    Route::patch('/monitoring-tryout/{tryoutId}/pembahasan-visibility', [MonitoringTryoutController::class, 'updatePembahasanVisibility']);
     Route::get('/leaderboard/tryouts', [LeaderboardController::class, 'tryouts']);
     Route::get('/leaderboard/{tryoutId}', [LeaderboardController::class, 'leaderboard']);
     
@@ -136,4 +137,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/tryout/{id}/finish', [UserTryoutController::class, 'finish']);
     // Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
+    Route::get('/user/tryout/hasil/{tryoutId}/pembahasan', [UserTryoutController::class, 'pembahasan']);
 });

@@ -8,6 +8,7 @@ use App\Models\Attempt;
 use App\Models\TryoutSoal;
 use App\Models\BankSoalPernyataan;
 use App\Models\OpsiJawaban;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
@@ -21,7 +22,8 @@ class MonitoringTryoutController extends Controller
                 'tryout.paket',
                 'tryout.mulai',
                 'tryout.selesai',
-                'tryout.status'
+                'tryout.status',
+                'tryout.show_pembahasan'
             )
             ->withCount([
                 'attempts as total_peserta',
@@ -34,8 +36,35 @@ class MonitoringTryoutController extends Controller
             ])
             ->orderByDesc('tryout.created_at')
             ->get();
-
         return response()->json($tryouts);
+    }
+
+    public function updatePembahasanVisibility(Request $request, $tryoutId)
+    {
+        if (Auth::user()?->role !== 'admin') {
+            return response()->json([
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'show_pembahasan' => 'required|boolean',
+        ]);
+
+        $tryout = Tryout::findOrFail($tryoutId);
+        $tryout->update([
+            'show_pembahasan' => $data['show_pembahasan'],
+        ]);
+
+        return response()->json([
+            'message' => $tryout->show_pembahasan
+                ? 'Pembahasan tryout berhasil ditampilkan ke user.'
+                : 'Pembahasan tryout berhasil ditutup untuk user.',
+            'data' => [
+                'id' => $tryout->id,
+                'show_pembahasan' => (bool) $tryout->show_pembahasan,
+            ],
+        ]);
     }
     
     public function show($id)

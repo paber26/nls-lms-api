@@ -18,6 +18,13 @@ class Tryout extends Model
         'created_by',
         'ketentuan_khusus',
         'pesan_selesai',
+        'show_pembahasan',
+    ];
+
+    protected $casts = [
+        'mulai' => 'datetime',
+        'selesai' => 'datetime',
+        'show_pembahasan' => 'boolean',
     ];
 
     public function mapel()

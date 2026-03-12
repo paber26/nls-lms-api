@@ -8,6 +8,7 @@ use App\Models\Tryout;
 use App\Models\BankSoal;
 use App\Models\TryoutSoal;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class TryoutSoalController extends Controller
 {

@@ -30,6 +30,7 @@ class TryoutController extends Controller
                     'mapel' => $item->mapel->nama ?? '-',
                     'total_soal' => $item->total_soal ?? 0,
                     'status' => $item->status,
+                    'show_pembahasan' => (bool) $item->show_pembahasan,
                     'pembuat' => $item->pembuat->name ?? '-',
                     'mulai' => $item->mulai,
                     'selesai' => $item->selesai,
@@ -57,6 +58,7 @@ class TryoutController extends Controller
             'status'        => $tryout->status,
             'ketentuan_khusus' => $tryout->ketentuan_khusus,
             'pesan_selesai' => $tryout->pesan_selesai,
+            'show_pembahasan' => (bool) $tryout->show_pembahasan,
         ]);
     }
 
