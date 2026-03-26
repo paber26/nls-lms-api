@@ -29,7 +29,7 @@ class Tryout extends Model
     public function komponen()
     {
         return $this->belongsToMany(Komponen::class, 'tryout_komponen', 'tryout_id', 'komponen_id')
-                    ->withPivot('urutan')
+                    ->withPivot('urutan', 'durasi_menit')
                     ->orderBy('tryout_komponen.urutan');
     }
 

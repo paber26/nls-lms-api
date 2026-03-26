@@ -28,8 +28,14 @@ class TryoutController extends Controller
                 return [
                     'id' => $item->id,
                     'paket' => $item->paket,
-                    'komponen_id' => $item->komponen->pluck('id')->toArray(),
-                    'komponen' => $item->komponen->pluck('nama_komponen')->join(', ') ?: '-',
+                    'komponen' => $item->komponen->map(function ($k) {
+                        return [
+                            'id' => $k->id,
+                            'nama_komponen' => $k->nama_komponen,
+                            'durasi_menit' => $k->pivot->durasi_menit
+                        ];
+                    }),
+                    'komponen_text' => $item->komponen->pluck('nama_komponen')->join(', ') ?: '-',
                     'total_soal' => $item->total_soal ?? 0,
                     'status' => $item->status,
                     'show_pembahasan' => (bool) $item->show_pembahasan,
@@ -51,7 +57,13 @@ class TryoutController extends Controller
         return response()->json([
             'id'            => $tryout->id,
             'paket'         => $tryout->paket,
-            'komponen_id'      => $tryout->komponen->pluck('id')->toArray(),
+            'komponen'         => $tryout->komponen->map(function ($k) {
+                return [
+                    'id' => $k->id,
+                    'nama_komponen' => $k->nama_komponen,
+                    'durasi_menit' => $k->pivot->durasi_menit
+                ];
+            }),
             'komponen_nama'    => $tryout->komponen->pluck('nama_komponen')->join(', ') ?: '-',
             'tingkat'       => $tryout->komponen->pluck('mata_uji')->join(', ') ?: '-',
             'durasi_menit'  => $tryout->durasi_menit,
@@ -69,17 +81,19 @@ class TryoutController extends Controller
     {
         $data = $request->validate([
             'paket'        => 'required|string|max:255',
-            'komponen_id'  => 'required|array',
-            'komponen_id.*'=> 'integer|exists:komponen,id',
-            'durasi_menit' => 'required|integer',
+            'komponen'     => 'required|array',
+            'komponen.*.id'=> 'required|integer|exists:komponen,id',
+            'komponen.*.durasi_menit' => 'required|integer|min:1',
             'mulai'        => 'required|date',
             'selesai'      => 'required|date',
             // 'status'       => 'required|in:draft,active,finished',
         ]);
             
+        $totalDurasi = collect($data['komponen'])->sum('durasi_menit');
+
         $tryout = Tryout::create([
             'paket'        => $data['paket'],
-            'durasi_menit' => $data['durasi_menit'],
+            'durasi_menit' => $totalDurasi,
             'mulai'        => $data['mulai'],
             'selesai'      => $data['selesai'],
             // 'status'       => $data['status'],
@@ -87,8 +101,11 @@ class TryoutController extends Controller
         ]);
 
         $komponenData = [];
-        foreach ($data['komponen_id'] as $index => $id) {
-            $komponenData[$id] = ['urutan' => $index + 1];
+        foreach ($data['komponen'] as $index => $item) {
+            $komponenData[$item['id']] = [
+                'urutan' => $index + 1,
+                'durasi_menit' => $item['durasi_menit']
+            ];
         }
         $tryout->komponen()->sync($komponenData);
 
@@ -104,9 +121,9 @@ class TryoutController extends Controller
     {
         $data = $request->validate([
             'paket'        => 'required|string|max:255',
-            'komponen_id'  => 'required|array',
-            'komponen_id.*'=> 'integer|exists:komponen,id',
-            'durasi_menit' => 'required|integer',
+            'komponen'     => 'required|array',
+            'komponen.*.id'=> 'required|integer|exists:komponen,id',
+            'komponen.*.durasi_menit' => 'required|integer|min:1',
             'mulai'        => 'required|date',
             'selesai'      => 'required|date',
             'status'       => 'required|in:draft,active,finished',
@@ -116,9 +133,11 @@ class TryoutController extends Controller
 
         $tryout = Tryout::findOrFail($id);
 
+        $totalDurasi = collect($data['komponen'])->sum('durasi_menit');
+
         $tryout->update([
             'paket'        => $data['paket'],
-            'durasi_menit' => $data['durasi_menit'],
+            'durasi_menit' => $totalDurasi,
             'mulai'        => $data['mulai'],
             'selesai'      => $data['selesai'],
             'status'       => $data['status'],
@@ -128,8 +147,11 @@ class TryoutController extends Controller
         ]);
 
         $komponenData = [];
-        foreach ($data['komponen_id'] as $index => $id) {
-            $komponenData[$id] = ['urutan' => $index + 1];
+        foreach ($data['komponen'] as $index => $item) {
+            $komponenData[$item['id']] = [
+                'urutan' => $index + 1,
+                'durasi_menit' => $item['durasi_menit']
+            ];
         }
         $tryout->komponen()->sync($komponenData);
 

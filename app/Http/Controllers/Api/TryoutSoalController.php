@@ -18,16 +18,17 @@ class TryoutSoalController extends Controller
      */
     public function index($id)
     {
-        $soal = TryoutSoal::with('banksoal')
+        $soal = TryoutSoal::with('banksoal.komponen')
             ->where('tryout_id', $id)
             ->orderBy('urutan')
             ->get()
             ->map(function ($item) {
                 return [
-                    'id'         => $item->banksoal->id,
-                    'pertanyaan' => $item->banksoal->pertanyaan,
-                    'urutan'     => $item->urutan,
-                    'poin'       => $item->poin,
+                    'id'            => $item->banksoal->id,
+                    'pertanyaan'    => $item->banksoal->pertanyaan,
+                    'urutan'        => $item->urutan,
+                    'poin'          => $item->poin,
+                    'komponen_nama' => $item->banksoal->komponen?->nama_komponen ?? '-'
                 ];
             });
 
@@ -80,6 +81,7 @@ class TryoutSoalController extends Controller
     public function indexDetail($id)
     {
         $soal = TryoutSoal::with([
+                'banksoal.komponen',
                 'banksoal.opsiJawaban',
                 'banksoal.pernyataanKompleks'
             ])
@@ -91,12 +93,13 @@ class TryoutSoalController extends Controller
                 $banksoal = $item->banksoal;
 
                 $result = [
-                    'id'         => $banksoal->id,
-                    'pertanyaan' => $banksoal->pertanyaan,
-                    'tipe'       => $banksoal->tipe,
-                    'urutan'     => $item->urutan,
-                    'poin'       => $item->poin,
-                    'pembahasan' => $banksoal->pembahasan,
+                    'id'            => $banksoal->id,
+                    'pertanyaan'    => $banksoal->pertanyaan,
+                    'tipe'          => $banksoal->tipe,
+                    'urutan'        => $item->urutan,
+                    'poin'          => $item->poin,
+                    'pembahasan'    => $banksoal->pembahasan,
+                    'komponen_nama' => $banksoal->komponen?->nama_komponen ?? '-',
                 ];
 
                 // ======================
