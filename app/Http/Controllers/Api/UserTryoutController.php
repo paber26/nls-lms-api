@@ -99,6 +99,22 @@ class UserTryoutController extends Controller
             ]);
         }
 
+        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
+            ->whereNull('selesai')
+            ->first();
+
+        if (! $activeKomponen) {
+            $firstKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->first();
+            if ($firstKomponen) {
+                \App\Models\AttemptKomponen::create([
+                    'attempt_id' => $attempt->id,
+                    'komponen_id' => $firstKomponen->id,
+                    'mulai' => now(),
+                    'status' => 'ongoing'
+                ]);
+            }
+        }
+
         return response()->json([
             'message' => 'Tryout started',
             'attempt_id' => $attempt->id
@@ -123,13 +139,32 @@ class UserTryoutController extends Controller
                 'durasi_menit'  => $tryout->durasi_menit ?? 0,
                 'waktu_selesai' => null,
                 'sisa_detik'    => 0,
+                'komponen_id'   => null,
             ]);
         }
 
-        $durasiMenit = $tryout->durasi_menit ?? 0;
+        $activeKomponen = \App\Models\AttemptKomponen::with('komponen')
+            ->where('attempt_id', $attempt->id)
+            ->whereNull('selesai')
+            ->first();
 
-        $waktuSelesai = $attempt->mulai->copy()->addMinutes($durasiMenit);
+        if (! $activeKomponen) {
+            return response()->json([
+                'mulai'         => null,
+                'durasi_menit'  => 0,
+                'waktu_selesai' => null,
+                'sisa_detik'    => 0,
+                'komponen_id'   => null,
+            ]);
+        }
 
+        $pivot = \Illuminate\Support\Facades\DB::table('tryout_komponen')
+            ->where('tryout_id', $tryout->id)
+            ->where('komponen_id', $activeKomponen->komponen_id)
+            ->first();
+
+        $durasiMenit = $pivot ? $pivot->durasi_menit : 0;
+        $waktuSelesai = $activeKomponen->mulai->copy()->addMinutes($durasiMenit);
         $sekarang = now();
 
         // Hitung selisih dalam detik
@@ -138,10 +173,12 @@ class UserTryoutController extends Controller
             : 0;
 
         return response()->json([
-            'mulai'          => $attempt->mulai,
+            'mulai'          => $activeKomponen->mulai,
             'durasi_menit'   => $durasiMenit,
             'waktu_selesai'  => $waktuSelesai,
             'sisa_detik'     => $sisaDetik,
+            'komponen_id'    => $activeKomponen->komponen_id,
+            'komponen_nama'  => $activeKomponen->komponen->nama_komponen ?? '-'
         ]);
     }
     
@@ -197,13 +234,14 @@ class UserTryoutController extends Controller
                 ->value('jawaban');
 
             $result[] = [
-                'nomor'       => $index + 1,
-                'pertanyaan'  => $bankSoal->pertanyaan,
-                'tipe'        => $tipe,
-                'opsi'        => $opsi,
-                'jawaban'     => $jawaban ?? [],
-                'peserta'     => $user->name,
-                'total_soal'  => $totalSoal,
+                'nomor'        => $index + 1,
+                'pertanyaan'   => $bankSoal->pertanyaan,
+                'tipe'         => $tipe,
+                'opsi'         => $opsi,
+                'jawaban'      => $jawaban ?? [],
+                'peserta'      => $user->name,
+                'total_soal'   => $totalSoal,
+                'komponen_nama'=> $bankSoal->komponen->nama_komponen ?? '-',
             ];
         }
 
@@ -232,6 +270,14 @@ class UserTryoutController extends Controller
             ->firstOrFail();
         
         $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
+
+        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
+            ->whereNull('selesai')
+            ->first();
+
+        if (! $activeKomponen || $activeKomponen->komponen_id !== $bankSoal->komponen_id) {
+            return response()->json(['message' => 'Soal ini tidak berada pada subtes yang sedang aktif'], 400);
+        }
 
         $isCorrect = null;
         $jawabanUser = [];
@@ -618,7 +664,6 @@ class UserTryoutController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Ambil attempt aktif
         $attempt = Attempt::where('tryout_id', $id)
             ->where('user_id', $user->id)
             ->whereNull('selesai')
@@ -630,18 +675,99 @@ class UserTryoutController extends Controller
             ], 400);
         }
 
-        // 2. Kunci attempt
-        $attempt->update([
-            'selesai' => now(),
-            'status'  => 'submitted', // opsional, tapi disarankan
-        ]);
-
-        // 3. (OPSIONAL) Hitung nilai
-        $this->hitungNilai($attempt);
+        $this->finishLogic($attempt);
 
         return response()->json([
             'message' => 'Tryout berhasil diakhiri'
         ]);
+    }
+
+    public function nextKomponen($id)
+    {
+        $user = Auth::user();
+
+        $attempt = Attempt::where('tryout_id', $id)
+            ->where('user_id', $user->id)
+            ->whereNull('selesai')
+            ->firstOrFail();
+
+        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
+            ->whereNull('selesai')
+            ->first();
+
+        if ($activeKomponen) {
+            $activeKomponen->update([
+                'selesai' => now(),
+                'status' => 'finished'
+            ]);
+        }
+
+        $tryout = Tryout::findOrFail($id);
+        $allKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->get();
+        
+        $nextKomponen = null;
+        $foundCurrent = false;
+
+        foreach ($allKomponen as $komponen) {
+            if (!$activeKomponen) {
+                // Fallback jika tidak ada active komponen sebelumnya
+                $nextKomponen = $komponen;
+                break;
+            }
+
+            if ($foundCurrent) {
+                $nextKomponen = $komponen;
+                break;
+            }
+
+            if ($komponen->id == $activeKomponen->komponen_id) {
+                $foundCurrent = true;
+            }
+        }
+
+        if ($nextKomponen) {
+            \App\Models\AttemptKomponen::create([
+                'attempt_id' => $attempt->id,
+                'komponen_id' => $nextKomponen->id,
+                'mulai' => now(),
+                'status' => 'ongoing'
+            ]);
+
+            return response()->json([
+                'message' => 'Lanjut ke subtes berikutnya',
+                'komponen_id' => $nextKomponen->id,
+                'is_finished' => false,
+            ]);
+        }
+
+        // Kalau tidak ada komponen lagi
+        $this->finishLogic($attempt);
+        
+        return response()->json([
+            'message' => 'Tryout berhasil diselesaikan',
+            'is_finished' => true,
+        ]);
+    }
+
+    private function finishLogic($attempt)
+    {
+        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
+            ->whereNull('selesai')
+            ->first();
+
+        if ($activeKomponen) {
+            $activeKomponen->update([
+                'selesai' => now(),
+                'status' => 'finished'
+            ]);
+        }
+
+        $attempt->update([
+            'selesai' => now(),
+            'status'  => 'submitted',
+        ]);
+
+        $this->hitungNilai($attempt);
     }
 
     public function hitungNilai($attempt)

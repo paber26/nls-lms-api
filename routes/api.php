@@ -140,6 +140,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::post('/user/tryout/{id}/answer', [UserTryoutController::class, 'answer']);
     Route::post('/user/tryout/{id}/finish', [UserTryoutController::class, 'finish']);
+    Route::post('/user/tryout/{id}/next-komponen', [UserTryoutController::class, 'nextKomponen']);
     // Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}/pembahasan', [UserTryoutController::class, 'pembahasan']);
