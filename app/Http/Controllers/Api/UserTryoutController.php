@@ -528,8 +528,9 @@ class UserTryoutController extends Controller
             }
 
             $navigasi[] = [
-                'nomor'  => $index + 1,
-                'status' => $status,
+                'nomor'    => $index + 1,
+                'status'   => $status,
+                'komponen' => $bankSoal->komponen->nama_komponen ?? 'Lainnya',
             ];
         }
 
@@ -576,8 +577,8 @@ class UserTryoutController extends Controller
         $jawabanBySoal = $attempt->jawabanPeserta->keyBy('banksoal_id');
 
         $soalTryout = TryoutSoal::with(['banksoal' => function ($q) {
-                $q->select('id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
-            }])
+                $q->select('id', 'komponen_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
+            }, 'banksoal.komponen'])
             ->where('tryout_id', $tryoutId)
             ->orderBy('urutan')
             ->get();
@@ -629,6 +630,8 @@ class UserTryoutController extends Controller
                 'is_correct' => $jawaban ? (is_null($jawaban->is_correct) ? null : ((int) $jawaban->is_correct === 1)) : null,
                 'pembahasan' => $bankSoal->pembahasan,
                 'poin_diperoleh' => round($poinDiperoleh, 2),
+                'komponen_nama'  => $bankSoal->komponen->nama_komponen ?? '-',
+                'tipe'           => $bankSoal->tipe,
             ];
         }
 
