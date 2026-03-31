@@ -31,7 +31,7 @@ class UserTryoutController extends Controller
             ->map(function ($tryout) {
                 $attempt = $tryout->attempts->first();
 
-                if (! $attempt) {
+                if (!$attempt) {
                     $status = null;
                 } else {
                     $status = $attempt->status;
@@ -90,7 +90,7 @@ class UserTryoutController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        if (! $attempt) {
+        if (!$attempt) {
             $attempt = $tryout->attempts()->create([
                 'tryout_id' => $tryout->id,
                 'user_id' => $user->id,
@@ -103,7 +103,7 @@ class UserTryoutController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        if (! $activeKomponen) {
+        if (!$activeKomponen) {
             $firstKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->first();
             if ($firstKomponen) {
                 \App\Models\AttemptKomponen::create([
@@ -133,13 +133,13 @@ class UserTryoutController extends Controller
             ->first();
 
         // Jika tidak ada attempt aktif (sudah submit atau belum mulai)
-        if (! $attempt) {
+        if (!$attempt) {
             return response()->json([
-                'mulai'         => null,
-                'durasi_menit'  => $tryout->durasi_menit ?? 0,
+                'mulai' => null,
+                'durasi_menit' => $tryout->durasi_menit ?? 0,
                 'waktu_selesai' => null,
-                'sisa_detik'    => 0,
-                'komponen_id'   => null,
+                'sisa_detik' => 0,
+                'komponen_id' => null,
             ]);
         }
 
@@ -148,13 +148,13 @@ class UserTryoutController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        if (! $activeKomponen) {
+        if (!$activeKomponen) {
             return response()->json([
-                'mulai'         => null,
-                'durasi_menit'  => 0,
+                'mulai' => null,
+                'durasi_menit' => 0,
                 'waktu_selesai' => null,
-                'sisa_detik'    => 0,
-                'komponen_id'   => null,
+                'sisa_detik' => 0,
+                'komponen_id' => null,
             ]);
         }
 
@@ -173,15 +173,15 @@ class UserTryoutController extends Controller
             : 0;
 
         return response()->json([
-            'mulai'          => $activeKomponen->mulai,
-            'durasi_menit'   => $durasiMenit,
-            'waktu_selesai'  => $waktuSelesai,
-            'sisa_detik'     => $sisaDetik,
-            'komponen_id'    => $activeKomponen->komponen_id,
-            'komponen_nama'  => $activeKomponen->komponen->nama_komponen ?? '-'
+            'mulai' => $activeKomponen->mulai,
+            'durasi_menit' => $durasiMenit,
+            'waktu_selesai' => $waktuSelesai,
+            'sisa_detik' => $sisaDetik,
+            'komponen_id' => $activeKomponen->komponen_id,
+            'komponen_nama' => $activeKomponen->komponen->nama_komponen ?? '-'
         ]);
     }
-    
+
     public function questions($id)
     {
         $user = Auth::user();
@@ -202,7 +202,8 @@ class UserTryoutController extends Controller
         foreach ($tryoutSoalList as $index => $tryoutSoal) {
 
             $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
-            if (! $bankSoal) continue;
+            if (!$bankSoal)
+                continue;
 
             $tipe = $bankSoal->tipe;
             $opsi = null;
@@ -212,7 +213,7 @@ class UserTryoutController extends Controller
                     ->orderBy('label')
                     ->get()
                     ->map(fn($o) => [
-                        'key'  => $o->label,
+                        'key' => $o->label,
                         'text' => $o->teks,
                     ])
                     ->values();
@@ -234,14 +235,14 @@ class UserTryoutController extends Controller
                 ->value('jawaban');
 
             $result[] = [
-                'nomor'        => $index + 1,
-                'pertanyaan'   => $bankSoal->pertanyaan,
-                'tipe'         => $tipe,
-                'opsi'         => $opsi,
-                'jawaban'      => $jawaban ?? [],
-                'peserta'      => $user->name,
-                'total_soal'   => $totalSoal,
-                'komponen_nama'=> $bankSoal->komponen->nama_komponen ?? '-',
+                'nomor' => $index + 1,
+                'pertanyaan' => $bankSoal->pertanyaan,
+                'tipe' => $tipe,
+                'opsi' => $opsi,
+                'jawaban' => $jawaban ?? [],
+                'peserta' => $user->name,
+                'total_soal' => $totalSoal,
+                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
             ];
         }
 
@@ -253,12 +254,12 @@ class UserTryoutController extends Controller
     public function answer(Request $request, $id)
     {
         $request->validate([
-            'nomor'   => 'required|integer|min:1',
+            'nomor' => 'required|integer|min:1',
             'jawaban' => 'array'
         ]);
 
         $user = Auth::user();
-        
+
         $attempt = Attempt::where('tryout_id', $id)
             ->where('user_id', $user->id)
             ->whereNull('selesai')
@@ -268,14 +269,14 @@ class UserTryoutController extends Controller
             ->orderBy('urutan')
             ->skip($request->nomor - 1)
             ->firstOrFail();
-        
+
         $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
 
         $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
             ->whereNull('selesai')
             ->first();
 
-        if (! $activeKomponen || $activeKomponen->komponen_id !== $bankSoal->komponen_id) {
+        if (!$activeKomponen || $activeKomponen->komponen_id !== $bankSoal->komponen_id) {
             return response()->json(['message' => 'Soal ini tidak berada pada subtes yang sedang aktif'], 400);
         }
 
@@ -385,11 +386,11 @@ class UserTryoutController extends Controller
 
         JawabanPeserta::updateOrCreate(
             [
-                'attempt_id'  => $attempt->id,
+                'attempt_id' => $attempt->id,
                 'banksoal_id' => $tryoutSoal->banksoal_id,
             ],
             [
-                'jawaban'    => $jawabanUser,
+                'jawaban' => $jawabanUser,
                 'is_correct' => $isCorrect,
             ]
         );
@@ -405,11 +406,11 @@ class UserTryoutController extends Controller
             'tryout',
             'jawabanPeserta'
         ])
-        ->where('tryout_id', $tryoutId)
-        ->where('user_id', Auth::id())
-        ->where('status', 'submitted')
-        ->latest('selesai')
-        ->firstOrFail();
+            ->where('tryout_id', $tryoutId)
+            ->where('user_id', Auth::id())
+            ->where('status', 'submitted')
+            ->latest('selesai')
+            ->firstOrFail();
 
         // $jawaban = $attempt->jawabanPeserta; // REMOVED
         $nilaiPoin = 0;
@@ -421,7 +422,7 @@ class UserTryoutController extends Controller
 
         // Ambil jawaban peserta lalu key by banksoal_id
         $jawabanCollection = $attempt->jawabanPeserta->keyBy('banksoal_id');
-        
+
         $benar = 0;
         $salah = 0;
         $kosong = 0;
@@ -430,11 +431,12 @@ class UserTryoutController extends Controller
         foreach ($semuaSoal as $index => $tryoutSoal) {
 
             $bankSoal = BankSoal::find($tryoutSoal->banksoal_id);
-            if (! $bankSoal) continue;
+            if (!$bankSoal)
+                continue;
 
             $j = $jawabanCollection->get($bankSoal->id);
 
-            if (! $j) {
+            if (!$j) {
                 $kosong++;
                 $status = 'kosong';
                 $jawabanUser = [];
@@ -528,23 +530,23 @@ class UserTryoutController extends Controller
             }
 
             $navigasi[] = [
-                'nomor'    => $index + 1,
-                'status'   => $status,
+                'nomor' => $index + 1,
+                'status' => $status,
                 'komponen' => $bankSoal->komponen->nama_komponen ?? 'Lainnya',
             ];
         }
 
         return response()->json([
-            'paket'            => $attempt->tryout->paket,
-            'durasi_menit'     => $attempt->tryout->durasi_menit,
-            'jumlah_soal'      => $semuaSoal->count(),
-            'benar'            => $benar,
-            'salah'            => $salah,
-            'kosong'           => $kosong,
-            'navigasi'         => $navigasi,
-            'nilai_poin'       => round($nilaiPoin, 1),
+            'paket' => $attempt->tryout->paket,
+            'durasi_menit' => $attempt->tryout->durasi_menit,
+            'jumlah_soal' => $semuaSoal->count(),
+            'benar' => $benar,
+            'salah' => $salah,
+            'kosong' => $kosong,
+            'navigasi' => $navigasi,
+            'nilai_irt' => round($attempt->nilai, 1),
             // flag untuk frontend menentukan apakah pembahasan dapat dimuat
-            'show_pembahasan'  => (bool) $attempt->tryout->show_pembahasan,
+            'show_pembahasan' => (bool) $attempt->tryout->show_pembahasan,
         ]);
     }
 
@@ -555,10 +557,10 @@ class UserTryoutController extends Controller
     public function pembahasan($tryoutId)
     {
         $attempt = Attempt::with([
-                'user:id,name,email,sekolah_nama',
-                'tryout:id,paket',
-                'jawabanPeserta:id,attempt_id,banksoal_id,jawaban,is_correct'
-            ])
+            'user:id,name,email,sekolah_nama',
+            'tryout:id,paket',
+            'jawabanPeserta:id,attempt_id,banksoal_id,jawaban,is_correct'
+        ])
             ->where('tryout_id', $tryoutId)
             ->where('user_id', Auth::id())
             ->where('status', 'submitted')
@@ -576,9 +578,12 @@ class UserTryoutController extends Controller
 
         $jawabanBySoal = $attempt->jawabanPeserta->keyBy('banksoal_id');
 
-        $soalTryout = TryoutSoal::with(['banksoal' => function ($q) {
+        $soalTryout = TryoutSoal::with([
+            'banksoal' => function ($q) {
                 $q->select('id', 'komponen_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
-            }, 'banksoal.komponen'])
+            },
+            'banksoal.komponen'
+        ])
             ->where('tryout_id', $tryoutId)
             ->orderBy('urutan')
             ->get();
@@ -591,7 +596,7 @@ class UserTryoutController extends Controller
 
         foreach ($soalTryout as $index => $tryoutSoal) {
             $bankSoal = $tryoutSoal->banksoal;
-            if (! $bankSoal) {
+            if (!$bankSoal) {
                 continue;
             }
 
@@ -602,7 +607,7 @@ class UserTryoutController extends Controller
             $kunciJawaban = $this->resolveKunciJawaban($bankSoal->id, $bankSoal->tipe, $bankSoal->jawaban);
             $opsi = $this->resolveOpsiSoal($bankSoal->id, $bankSoal->tipe);
 
-            if (! $jawaban || $jawaban->is_correct === null || $this->isJawabanKosong($jawabanUserRaw)) {
+            if (!$jawaban || $jawaban->is_correct === null || $this->isJawabanKosong($jawabanUserRaw)) {
                 $kosong++;
             } elseif ((int) $jawaban->is_correct === 1) {
                 $benar++;
@@ -630,8 +635,8 @@ class UserTryoutController extends Controller
                 'is_correct' => $jawaban ? (is_null($jawaban->is_correct) ? null : ((int) $jawaban->is_correct === 1)) : null,
                 'pembahasan' => $bankSoal->pembahasan,
                 'poin_diperoleh' => round($poinDiperoleh, 2),
-                'komponen_nama'  => $bankSoal->komponen->nama_komponen ?? '-',
-                'tipe'           => $bankSoal->tipe,
+                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
+                'tipe' => $bankSoal->tipe,
             ];
         }
 
@@ -672,7 +677,7 @@ class UserTryoutController extends Controller
             ->whereNull('selesai')
             ->first();
 
-        if (! $attempt) {
+        if (!$attempt) {
             return response()->json([
                 'message' => 'Tryout sudah diakhiri atau tidak ditemukan'
             ], 400);
@@ -707,7 +712,7 @@ class UserTryoutController extends Controller
 
         $tryout = Tryout::findOrFail($id);
         $allKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->get();
-        
+
         $nextKomponen = null;
         $foundCurrent = false;
 
@@ -745,7 +750,7 @@ class UserTryoutController extends Controller
 
         // Kalau tidak ada komponen lagi
         $this->finishLogic($attempt);
-        
+
         return response()->json([
             'message' => 'Tryout berhasil diselesaikan',
             'is_finished' => true,
@@ -767,7 +772,7 @@ class UserTryoutController extends Controller
 
         $attempt->update([
             'selesai' => now(),
-            'status'  => 'submitted',
+            'status' => 'submitted',
         ]);
 
         $this->hitungNilai($attempt);
@@ -775,122 +780,137 @@ class UserTryoutController extends Controller
 
     public function hitungNilai($attempt)
     {
-        $totalPoin = 0;
-        
-        $jawabanPeserta = JawabanPeserta::where('attempt_id', $attempt->id)->get();
+        $skorPeserta = []; // key: komponen_id
+        $maxSkor = [];     // key: komponen_id
 
-        foreach ($jawabanPeserta as $jawaban) {
-            $bankSoal = BankSoal::find($jawaban->banksoal_id);
-            if (! $bankSoal) continue;
+        $semuaSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)->get();
+        $jawabanCollection = JawabanPeserta::where('attempt_id', $attempt->id)->get()->keyBy('banksoal_id');
 
-            // ambil tryout_soal untuk poin
-            $tryoutSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)
-                ->where('banksoal_id', $bankSoal->id)
-                ->first();
+        foreach ($semuaSoal as $soal) {
+            $bankSoal = BankSoal::find($soal->banksoal_id);
+            if (!$bankSoal)
+                continue;
 
-            $poinSoal = (float) ($tryoutSoal->poin ?? 0);
+            $kId = $bankSoal->komponen_id;
 
-            $jawabanUser = $jawaban->jawaban;
+            if (!isset($skorPeserta[$kId])) {
+                $skorPeserta[$kId] = 0;
+                $maxSkor[$kId] = 0;
+            }
 
-            /*
-            |--------------------------------------------------------------------------
-            | ISIAN → pakai tryout_soal.poin
-            |--------------------------------------------------------------------------
-            */
+            $poinSoal = (float) ($soal->poin ?? 0);
+            $poinMaxSoal = 0;
+
+            // --- Tentukan Poin Maksimal Soal Ini ---
             if ($bankSoal->tipe === 'isian') {
-                if (
-                    isset($bankSoal->jawaban) &&
-                    isset($jawabanUser[0]) &&
-                    strtolower(trim($jawabanUser[0])) === strtolower(trim($bankSoal->jawaban))
-                ) {
-                    $totalPoin += $poinSoal;
-                }
+                $poinMaxSoal = $poinSoal;
+            } elseif ($bankSoal->tipe === 'pg') {
+                $opsiBenar = OpsiJawaban::where('soal_id', $bankSoal->id)->where('is_correct', 1)->first();
+                $poinMaxSoal = $opsiBenar ? (float) ($opsiBenar->poin ?? 0) : $poinSoal;
+            } elseif ($bankSoal->tipe === 'pg_kompleks') {
+                $poinMaxSoal = 1.0;
+            } elseif ($bankSoal->tipe === 'pg_majemuk') {
+                $poinMaxSoal = OpsiJawaban::where('soal_id', $bankSoal->id)->where('is_correct', 1)->sum('poin');
+                if ($poinMaxSoal <= 0)
+                    $poinMaxSoal = $poinSoal; // fallback
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | PILIHAN GANDA BIASA → pakai opsi_jawaban.poin
-            |--------------------------------------------------------------------------
-            */
-            if ($bankSoal->tipe === 'pg') {
-                if (isset($jawabanUser[0])) {
-                    $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
-                        ->where('label', $jawabanUser[0])
-                        ->first();
+            $maxSkor[$kId] += $poinMaxSoal;
 
-                    if ($opsi && $opsi->is_correct) {
-                        $totalPoin += (float) ($opsi->poin ?? 0);
-                    }
-                }
-            }
+            // --- Hitung Skor Peserta ---
+            $jawabanRow = $jawabanCollection->get($bankSoal->id);
+            if ($jawabanRow && $jawabanRow->jawaban) {
+                $jawabanUser = $jawabanRow->jawaban;
 
-            /*
-            |--------------------------------------------------------------------------
-            | PILIHAN GANDA KOMPLEKS (aturan nasional)
-            |--------------------------------------------------------------------------
-            */
-            if ($bankSoal->tipe === 'pg_kompleks') {
-                $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
-                    ->orderBy('urutan')
-                    ->get();
-
-                $jumlahBenar = 0;
-                $totalPernyataan = $pernyataan->count();
-
-                foreach ($pernyataan as $p) {
-                    $index = ((int) $p->urutan) - 1; // karena array 0-based
-
+                if ($bankSoal->tipe === 'isian') {
                     if (
-                        array_key_exists($index, $jawabanUser) &&
-                        $jawabanUser[$index] !== null &&
-                        (int) $jawabanUser[$index] === (int) $p->jawaban_benar
+                        isset($bankSoal->jawaban) &&
+                        isset($jawabanUser[0]) &&
+                        strtolower(trim($jawabanUser[0])) === strtolower(trim($bankSoal->jawaban))
                     ) {
-                        $jumlahBenar++;
+                        $skorPeserta[$kId] += $poinSoal;
                     }
-                }
+                } elseif ($bankSoal->tipe === 'pg') {
+                    if (isset($jawabanUser[0])) {
+                        $opsi = OpsiJawaban::where('soal_id', $bankSoal->id)
+                            ->where('label', $jawabanUser[0])
+                            ->first();
 
-                // aturan nasional dinamis berdasarkan total pernyataan
-                if ($jumlahBenar === $totalPernyataan) {
-                    $totalPoin += 1.0;
-                } elseif ($jumlahBenar === $totalPernyataan - 1) {
-                    $totalPoin += 0.6;
-                } elseif ($jumlahBenar === $totalPernyataan - 2) {
-                    $totalPoin += 0.2;
-                }
-            }
+                        if ($opsi && $opsi->is_correct) {
+                            $skorPeserta[$kId] += (float) ($opsi->poin ?? 0);
+                        }
+                    }
+                } elseif ($bankSoal->tipe === 'pg_kompleks') {
+                    $pernyataan = BankSoalPernyataan::where('banksoal_id', $bankSoal->id)
+                        ->orderBy('urutan')
+                        ->get();
 
-                /*
-            |--------------------------------------------------------------------------
-            | PILIHAN GANDA MAJEMUK → jumlahkan poin tiap opsi yang dipilih (bisa negatif)
-            |--------------------------------------------------------------------------
-            */
-            if ($bankSoal->tipe === 'pg_majemuk') {
+                    $jumlahBenar = 0;
+                    $totalPernyataan = $pernyataan->count();
 
-                $opsiList = OpsiJawaban::where('soal_id', $bankSoal->id)->get();
-                $jawabanUser = $jawabanUser ?? [];
+                    foreach ($pernyataan as $p) {
+                        $idx = ((int) $p->urutan) - 1;
+                        if (
+                            array_key_exists($idx, $jawabanUser) &&
+                            $jawabanUser[$idx] !== null &&
+                            (int) $jawabanUser[$idx] === (int) $p->jawaban_benar
+                        ) {
+                            $jumlahBenar++;
+                        }
+                    }
 
-                foreach ($opsiList as $opsi) {
-
-                    if (in_array($opsi->label, $jawabanUser)) {
-
-                        // tambahkan poin sesuai nilai di database
-                        // (bisa positif atau negatif)
-                        $totalPoin += (float) ($opsi->poin ?? 0);
+                    if ($totalPernyataan > 0) {
+                        if ($jumlahBenar === $totalPernyataan) {
+                            $skorPeserta[$kId] += 1.0;
+                        } elseif ($jumlahBenar === $totalPernyataan - 1) {
+                            $skorPeserta[$kId] += 0.6;
+                        } elseif ($jumlahBenar === $totalPernyataan - 2) {
+                            $skorPeserta[$kId] += 0.2;
+                        }
+                    }
+                } elseif ($bankSoal->tipe === 'pg_majemuk') {
+                    $opsiList = OpsiJawaban::where('soal_id', $bankSoal->id)->get();
+                    foreach ($opsiList as $opsi) {
+                        if (is_array($jawabanUser) && in_array($opsi->label, $jawabanUser)) {
+                            $skorPeserta[$kId] += (float) ($opsi->poin ?? 0);
+                        }
                     }
                 }
             }
         }
-        
+
+        // --- Konversi ke Skala Dasar UTBK per Komponen ---
+        $totalSemuaSkala = 0;
+        $jumlahKomponen = count($maxSkor);
+
+        foreach ($maxSkor as $kId => $max) {
+            $peserta = $skorPeserta[$kId] ?? 0;
+
+            if ($max > 0) {
+                $ratio = min($peserta / $max, 1.0);
+                $ratio = max($ratio, 0.0);
+                // Rumus: 500 + ((Skor Mentah Peserta / Max Skor Mentah Komponen) * 450)
+                $skalaIRT = 500 + ($ratio * 450);
+            } else {
+                $skalaIRT = 500;
+            }
+
+            $totalSemuaSkala += $skalaIRT;
+        }
+
+        // Nilai akhir attempt adalah rata-rata skala komponen
+        $nilaiAkhir = $jumlahKomponen > 0 ? ($totalSemuaSkala / $jumlahKomponen) : 0;
+
         $attempt->update([
-                'nilai' => $totalPoin
-            ]);
+            'nilai' => round($nilaiAkhir, 2)
+        ]);
     }
 
     /* helper methods borrowed from MonitoringTryoutController */
 
     private function normalizeJawabanUser($jawabanUserRaw)
     {
-        if (! is_array($jawabanUserRaw)) {
+        if (!is_array($jawabanUserRaw)) {
             return $jawabanUserRaw;
         }
 
@@ -911,7 +931,7 @@ class UserTryoutController extends Controller
 
     private function isJawabanKosong($jawabanUserRaw): bool
     {
-        if (! is_array($jawabanUserRaw)) {
+        if (!is_array($jawabanUserRaw)) {
             return $jawabanUserRaw === null || $jawabanUserRaw === '';
         }
 
@@ -1004,7 +1024,7 @@ class UserTryoutController extends Controller
 
         if ($tipe === 'pg') {
             $label = $jawabanUser[0] ?? null;
-            if (! $label) {
+            if (!$label) {
                 return 0.0;
             }
 
