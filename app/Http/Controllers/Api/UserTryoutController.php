@@ -879,7 +879,7 @@ class UserTryoutController extends Controller
             }
         }
 
-        // --- Konversi ke Skala Dasar UTBK per Komponen ---
+        // --- Konversi ke Skala Dasar SNBT per Komponen ---
         $totalSemuaSkala = 0;
         $jumlahKomponen = count($maxSkor);
 
