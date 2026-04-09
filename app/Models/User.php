@@ -37,6 +37,7 @@ class User extends Authenticatable
         'password',
         'role',
         'is_active',
+        'cf_handle',
     ];
 
 

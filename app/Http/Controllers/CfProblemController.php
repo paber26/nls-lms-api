@@ -53,4 +53,20 @@ class CfProblemController extends Controller
             'message' => 'Problem Codeforces berhasil dihapus.'
         ]);
     }
+
+    public function statement(CfProblem $cfProblem, \App\Services\CodeforcesService $codeforces): JsonResponse
+    {
+        try {
+            $html = $codeforces->getProblemStatementHtml($cfProblem->cf_contest_id, $cfProblem->cf_index);
+            return response()->json([
+                'success' => true,
+                'data' => $html
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil deskripsi soal: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

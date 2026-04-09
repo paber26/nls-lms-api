@@ -87,6 +87,41 @@ class CodeforcesService
         ];
     }
 
+    public function getProblemStatementHtml(int $contestId, string $index): string
+    {
+        $url = "https://codeforces.com/contest/{$contestId}/problem/{$index}";
+        $response = Http::timeout(15)
+            ->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language' => 'en-US,en;q=0.5',
+            ])
+            ->get($url);
+        
+        if (!$response->successful()) {
+            throw new RuntimeException("Gagal mengambil halaman soal dari Codeforces.");
+        }
+        
+        $html = $response->body();
+        
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        $dom->loadHTML(mb_convert_encoding($html, 'HTML-ENTITIES', 'UTF-8'));
+        libxml_clear_errors();
+        
+        $xpath = new \DOMXPath($dom);
+        $nodes = $xpath->query('//div[contains(@class, "problem-statement")]');
+        
+        if ($nodes->length === 0) {
+            throw new RuntimeException("Deskripsi soal tidak ditemukan dalam halaman HTML.");
+        }
+        
+        $problemNode = $nodes->item(0);
+        $statementHtml = $dom->saveHTML($problemNode);
+        
+        return $statementHtml;
+    }
+
     private function request(string $method, array $params = []): array
     {
         $this->assertConfigured();

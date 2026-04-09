@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Mapel;
 
 class CfProblem extends Model
 {
@@ -29,6 +30,6 @@ class CfProblem extends Model
 
     public function mapel(): BelongsTo
     {
-        return $this->belongsTo(Mapel::class);
+        return $this->belongsTo(Mapel::class, 'mapel_id');
     }
 }

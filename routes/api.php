@@ -20,6 +20,7 @@ use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
 use App\Http\Controllers\Api\UserTryoutController;
 use App\Http\Controllers\Api\PesertaController;
+use App\Http\Controllers\Api\UserCodeforcesController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
 use App\Models\Komponen;
@@ -79,7 +80,7 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('banksoal', BankSoalController::class);
     Route::get('/mapel', function () {
-        return Komponen::select('id', 'kode', 'nama_komponen', 'mata_uji')->orderBy('id')->get();
+        return App\Models\Mapel::select('id', 'kode', 'nama', 'tingkat')->orderBy('id')->get();
     });
 
     Route::get('/komponen', function () {
@@ -106,6 +107,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware(EnsureAdminRole::class)->prefix('cf-problems')->group(function () {
         Route::get('/', [\App\Http\Controllers\CfProblemController::class, 'index']);
         Route::post('/', [\App\Http\Controllers\CfProblemController::class, 'store']);
+        Route::get('/{cfProblem}/statement', [\App\Http\Controllers\CfProblemController::class, 'statement']);
         Route::delete('/{cfProblem}', [\App\Http\Controllers\CfProblemController::class, 'destroy']);
     });
 
@@ -164,4 +166,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}/pembahasan', [UserTryoutController::class, 'pembahasan']);
+
+    // Competitive Programming endpoints
+    Route::get('/user/cp/problems', [UserCodeforcesController::class, 'index']);
+    Route::get('/user/cp/problems/{id}', [UserCodeforcesController::class, 'show']);
+    Route::post('/user/cp/problems/{id}/sync', [UserCodeforcesController::class, 'sync']);
 });
