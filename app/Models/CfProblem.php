@@ -16,6 +16,7 @@ class CfProblem extends Model
         'cf_contest_id',
         'cf_index',
         'name',
+        'statement_html',
         'tags',
         'rating',
         'points',

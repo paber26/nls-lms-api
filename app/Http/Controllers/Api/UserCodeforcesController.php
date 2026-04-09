@@ -54,11 +54,17 @@ class UserCodeforcesController extends Controller
     {
         $problem = CfProblem::with('mapel')->findOrFail($id);
         
-        $statementHtml = null;
-        try {
-            $statementHtml = $cfService->getProblemStatementHtml($problem->cf_contest_id, $problem->cf_index);
-        } catch (\Throwable $e) {
-            // Ignore error, statementHtml remains null
+        $statementHtml = $problem->statement_html;
+        
+        // Jaga-jaga untuk soal lama yang belum punya cache HTML
+        if (empty($statementHtml)) {
+            try {
+                $statementHtml = $cfService->getProblemStatementHtml($problem->cf_contest_id, $problem->cf_index);
+                if ($statementHtml) {
+                    $problem->statement_html = $statementHtml;
+                    $problem->save();
+                }
+            } catch (\Throwable $e) {}
         }
 
         return response()->json([

@@ -17,7 +17,7 @@ class CfProblemController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, \App\Services\CodeforcesService $codeforces): JsonResponse
     {
         $validated = $request->validate([
             'mapel_id' => 'required|exists:mapel,id',
@@ -28,6 +28,13 @@ class CfProblemController extends Controller
             'rating' => 'nullable|integer',
             'points' => 'required|integer|min:0'
         ]);
+        
+        try {
+            $statementHtml = $codeforces->getProblemStatementHtml($validated['cf_contest_id'], $validated['cf_index']);
+            if ($statementHtml) {
+                $validated['statement_html'] = $statementHtml;
+            }
+        } catch (\Throwable $e) {}
 
         $problem = CfProblem::updateOrCreate(
             [
