@@ -56,15 +56,19 @@ class UserCodeforcesController extends Controller
 
         $statementHtml = $problem->statement_html;
 
-        // Jaga-jaga untuk soal lama yang belum punya cache HTML
-        if (empty($statementHtml)) {
-            try {
-                $statementHtml = $cfService->getProblemStatementHtml($problem->cf_contest_id, $problem->cf_index);
-                if ($statementHtml) {
-                    $problem->statement_html = $statementHtml;
-                    $problem->save();
+        if ($problem->is_custom_statement) {
+            $statementHtml = $problem->custom_statement_html;
+        } else {
+            // Jaga-jaga untuk soal lama yang belum punya cache HTML
+            if (empty($statementHtml)) {
+                try {
+                    $statementHtml = $cfService->getProblemStatementHtml($problem->cf_contest_id, $problem->cf_index);
+                    if ($statementHtml) {
+                        $problem->statement_html = $statementHtml;
+                        $problem->save();
+                    }
+                } catch (\Throwable $e) {
                 }
-            } catch (\Throwable $e) {
             }
         }
 

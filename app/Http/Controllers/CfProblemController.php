@@ -63,9 +63,15 @@ class CfProblemController extends Controller
     {
         $validated = $request->validate([
             'statement_html' => 'nullable|string',
+            'custom_statement_html' => 'nullable|string',
+            'is_custom_statement' => 'nullable|boolean',
             'mapel_id' => 'nullable|exists:mapel,id',
             'points' => 'nullable|integer|min:0',
         ]);
+
+        if ($request->has('is_custom_statement')) {
+            $validated['is_custom_statement'] = filter_var($validated['is_custom_statement'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         $cfProblem->update($validated);
 

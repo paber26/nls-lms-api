@@ -17,6 +17,8 @@ class CfProblem extends Model
         'cf_index',
         'name',
         'statement_html',
+        'custom_statement_html',
+        'is_custom_statement',
         'tags',
         'rating',
         'points',
@@ -27,6 +29,7 @@ class CfProblem extends Model
         'cf_contest_id' => 'integer',
         'rating' => 'integer',
         'points' => 'integer',
+        'is_custom_statement' => 'boolean',
     ];
 
     public function mapel(): BelongsTo
