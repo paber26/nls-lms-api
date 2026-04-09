@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\UserProfilController;
 use App\Http\Controllers\Api\UserTryoutController;
 use App\Http\Controllers\Api\PesertaController;
 use App\Http\Controllers\Api\UserCodeforcesController;
+use App\Http\Controllers\Api\CpTryoutPackageController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
 use App\Models\Mapel;
@@ -107,6 +108,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/{cfProblem}/statement', [\App\Http\Controllers\CfProblemController::class, 'statement']);
         Route::put('/{cfProblem}', [\App\Http\Controllers\CfProblemController::class, 'update']);
         Route::delete('/{cfProblem}', [\App\Http\Controllers\CfProblemController::class, 'destroy']);
+    });
+
+    Route::middleware(EnsureAdminRole::class)->prefix('cp-tryout-packages')->group(function () {
+        Route::get('/', [CpTryoutPackageController::class, 'index']);
+        Route::post('/', [CpTryoutPackageController::class, 'store']);
+        Route::get('/{id}', [CpTryoutPackageController::class, 'show']);
+        Route::put('/{id}', [CpTryoutPackageController::class, 'update']);
+        Route::put('/{id}/problems', [CpTryoutPackageController::class, 'syncProblems']);
+        Route::get('/{id}/leaderboard', [CpTryoutPackageController::class, 'leaderboard']);
     });
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);

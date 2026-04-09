@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Mapel;
 
 class CfProblem extends Model
@@ -35,5 +36,15 @@ class CfProblem extends Model
     public function mapel(): BelongsTo
     {
         return $this->belongsTo(Mapel::class, 'mapel_id');
+    }
+
+    public function cpTryoutPackages(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            CpTryoutPackage::class,
+            'cp_tryout_package_problems',
+            'cf_problem_id',
+            'cp_tryout_package_id'
+        )->withPivot('urutan')->withTimestamps();
     }
 }
