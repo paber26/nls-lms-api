@@ -87,19 +87,19 @@ class CodeforcesService
         ];
     }
 
-    public function getProblemStatementHtml(int $contestId, string $index): string
+    public function getProblemStatementHtml(int $contestId, string $index): ?string
     {
         $url = "https://codeforces.com/contest/{$contestId}/problem/{$index}";
         $response = Http::timeout(15)
             ->withHeaders([
-                'User-Agent' => 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                 'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language' => 'en-US,en;q=0.5',
             ])
             ->get($url);
         
         if (!$response->successful()) {
-            throw new RuntimeException("Gagal mengambil halaman soal dari Codeforces.");
+            return null; // Cloudflare blocking or 404
         }
         
         $html = $response->body();
@@ -113,7 +113,7 @@ class CodeforcesService
         $nodes = $xpath->query('//div[contains(@class, "problem-statement")]');
         
         if ($nodes->length === 0) {
-            throw new RuntimeException("Deskripsi soal tidak ditemukan dalam halaman HTML.");
+            return null;
         }
         
         $problemNode = $nodes->item(0);

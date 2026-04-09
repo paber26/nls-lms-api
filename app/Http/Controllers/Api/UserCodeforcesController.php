@@ -54,31 +54,31 @@ class UserCodeforcesController extends Controller
     {
         $problem = CfProblem::with('mapel')->findOrFail($id);
         
-        // Coba untuk mendapat HTML problem statement
+        $statementHtml = null;
         try {
             $statementHtml = $cfService->getProblemStatementHtml($problem->cf_contest_id, $problem->cf_index);
-            
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'id' => $problem->id,
-                    'cf_contest_id' => $problem->cf_contest_id,
-                    'cf_index' => $problem->cf_index,
-                    'name' => $problem->name,
-                    'mapel' => $problem->mapel ? $problem->mapel->nama : 'Informatika',
-                    'statement_html' => $statementHtml,
-                    'is_solved' => UserCfSubmission::where('user_id', request()->user()->id)
-                                    ->where('cf_problem_id', $problem->id)
-                                    ->where('verdict', 'OK')
-                                    ->exists()
-                ]
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memuat soal dari Codeforces: ' . $e->getMessage()
-            ], 500);
+        } catch (\Throwable $e) {
+            // Ignore error, statementHtml remains null
         }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $problem->id,
+                'cf_contest_id' => $problem->cf_contest_id,
+                'cf_index' => $problem->cf_index,
+                'name' => $problem->name,
+                'mapel' => $problem->mapel ? $problem->mapel->nama : 'Informatika',
+                'statement_html' => $statementHtml,
+                'rating' => $problem->rating,
+                'points' => $problem->points,
+                'tags' => $problem->tags,
+                'is_solved' => \App\Models\UserCfSubmission::where('user_id', request()->user()->id)
+                                ->where('cf_problem_id', $problem->id)
+                                ->where('verdict', 'OK')
+                                ->exists()
+            ]
+        ]);
     }
 
     /**
