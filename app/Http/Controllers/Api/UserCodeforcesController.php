@@ -81,6 +81,28 @@ class UserCodeforcesController extends Controller
     }
 
     /**
+     * Tampilkan metadata soal saja (tanpa statement HTML yang berat)
+     */
+    public function info($id)
+    {
+        $problem = CfProblem::with('mapel')->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $problem->id,
+                'cf_contest_id' => $problem->cf_contest_id,
+                'cf_index' => $problem->cf_index,
+                'name' => $problem->name,
+                'mapel' => $problem->mapel ? $problem->mapel->nama : 'Informatika',
+                'tags' => $problem->tags,
+                'points' => $problem->points,
+                'rating' => $problem->rating,
+            ]
+        ]);
+    }
+
+    /**
      * Lakukan sinkronisasi ke Codeforces API untuk mengecek apakah user sudah accept soal ini
      */
     public function sync(Request $request, $id, CodeforcesService $cfService)

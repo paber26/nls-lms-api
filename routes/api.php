@@ -170,5 +170,6 @@ Route::middleware('auth:sanctum')->group(function () {
     // Competitive Programming endpoints
     Route::get('/user/cp/problems', [UserCodeforcesController::class, 'index']);
     Route::get('/user/cp/problems/{id}', [UserCodeforcesController::class, 'show']);
+    Route::get('/user/cp/problems/{id}/info', [UserCodeforcesController::class, 'info']);
     Route::post('/user/cp/problems/{id}/sync', [UserCodeforcesController::class, 'sync']);
 });
