@@ -25,7 +25,7 @@ class UserTryoutController extends Controller
                 'attempts' => function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 },
-                'komponen'
+                'mapel'
             ])
             ->get()
             ->map(function ($tryout) {
@@ -37,13 +37,13 @@ class UserTryoutController extends Controller
                     $status = $attempt->status;
                 }
 
-                $komponenFirst = $tryout->komponen->first();
+                $mapel = $tryout->mapel;
 
                 return [
                     'id' => $tryout->id,
                     'nama' => $tryout->paket ?? $tryout->nama,
-                    'jenjang' => $komponenFirst->mata_uji ?? '-',
-                    'komponen' => $tryout->komponen->pluck('nama_komponen')->join(', ') ?: '-',
+                    'jenjang' => $mapel->tingkat ?? '-',
+                    'mapel' => $mapel->nama ?? '-',
                     'jumlah_soal' => $tryout->questions_count ?? 0,
                     'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                     'status' => $status,
@@ -59,17 +59,17 @@ class UserTryoutController extends Controller
     {
         $tryout = Tryout::where('status', 'active')
             ->withCount('questions')
-            ->with('komponen')
+            ->with('mapel')
             ->findOrFail($id);
 
-        $komponenFirst = $tryout->komponen->first();
+        $mapel = $tryout->mapel;
 
         return response()->json([
             'data' => [
                 'id' => $tryout->id,
                 'nama' => $tryout->paket ?? $tryout->nama,
-                'jenjang' => $komponenFirst->mata_uji ?? '-',
-                'komponen' => $tryout->komponen->pluck('nama_komponen')->join(', ') ?: '-',
+                'jenjang' => $mapel->tingkat ?? '-',
+                'mapel' => $mapel->nama ?? '-',
                 'jumlah_soal' => $tryout->questions_count ?? 0,
                 'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                 'mulai' => $tryout->mulai,
@@ -117,22 +117,6 @@ class UserTryoutController extends Controller
             ]);
         }
 
-        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
-            ->whereNull('selesai')
-            ->first();
-
-        if (!$activeKomponen) {
-            $firstKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->first();
-            if ($firstKomponen) {
-                \App\Models\AttemptKomponen::create([
-                    'attempt_id' => $attempt->id,
-                    'komponen_id' => $firstKomponen->id,
-                    'mulai' => now(),
-                    'status' => 'ongoing'
-                ]);
-            }
-        }
-
         return response()->json([
             'message' => 'Tryout started',
             'attempt_id' => $attempt->id
@@ -150,53 +134,32 @@ class UserTryoutController extends Controller
             ->where('status', 'ongoing')
             ->first();
 
-        // Jika tidak ada attempt aktif (sudah submit atau belum mulai)
         if (!$attempt) {
             return response()->json([
                 'mulai' => null,
                 'durasi_menit' => $tryout->durasi_menit ?? 0,
                 'waktu_selesai' => null,
                 'sisa_detik' => 0,
-                'komponen_id' => null,
+                'mapel_id' => $tryout->mapel_id,
+                'mapel_nama' => $tryout->mapel?->nama ?? '-',
             ]);
         }
 
-        $activeKomponen = \App\Models\AttemptKomponen::with('komponen')
-            ->where('attempt_id', $attempt->id)
-            ->whereNull('selesai')
-            ->first();
-
-        if (!$activeKomponen) {
-            return response()->json([
-                'mulai' => null,
-                'durasi_menit' => 0,
-                'waktu_selesai' => null,
-                'sisa_detik' => 0,
-                'komponen_id' => null,
-            ]);
-        }
-
-        $pivot = \Illuminate\Support\Facades\DB::table('tryout_komponen')
-            ->where('tryout_id', $tryout->id)
-            ->where('komponen_id', $activeKomponen->komponen_id)
-            ->first();
-
-        $durasiMenit = $pivot ? $pivot->durasi_menit : 0;
-        $waktuSelesai = $activeKomponen->mulai->copy()->addMinutes($durasiMenit);
+        $durasiMenit = (int) ($tryout->durasi_menit ?? 0);
+        $waktuSelesai = $attempt->mulai->copy()->addMinutes($durasiMenit);
         $sekarang = now();
 
-        // Hitung selisih dalam detik
         $sisaDetik = $sekarang->lessThan($waktuSelesai)
             ? $sekarang->diffInSeconds($waktuSelesai)
             : 0;
 
         return response()->json([
-            'mulai' => $activeKomponen->mulai,
+            'mulai' => $attempt->mulai,
             'durasi_menit' => $durasiMenit,
             'waktu_selesai' => $waktuSelesai,
             'sisa_detik' => $sisaDetik,
-            'komponen_id' => $activeKomponen->komponen_id,
-            'komponen_nama' => $activeKomponen->komponen->nama_komponen ?? '-'
+            'mapel_id' => $tryout->mapel_id,
+            'mapel_nama' => $tryout->mapel?->nama ?? '-',
         ]);
     }
 
@@ -260,7 +223,7 @@ class UserTryoutController extends Controller
                 'jawaban' => $jawaban ?? [],
                 'peserta' => $user->name,
                 'total_soal' => $totalSoal,
-                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
+                'mapel_nama' => $bankSoal->mapel->nama ?? '-',
             ];
         }
 
@@ -289,14 +252,6 @@ class UserTryoutController extends Controller
             ->firstOrFail();
 
         $bankSoal = BankSoal::findOrFail($tryoutSoal->banksoal_id);
-
-        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
-            ->whereNull('selesai')
-            ->first();
-
-        if (!$activeKomponen || $activeKomponen->komponen_id !== $bankSoal->komponen_id) {
-            return response()->json(['message' => 'Soal ini tidak berada pada komponen yang sedang aktif'], 400);
-        }
 
         $isCorrect = null;
         $jawabanUser = [];
@@ -550,11 +505,11 @@ class UserTryoutController extends Controller
             $navigasi[] = [
                 'nomor' => $index + 1,
                 'status' => $status,
-                'komponen' => $bankSoal->komponen->nama_komponen ?? 'Lainnya',
+                'mapel' => $bankSoal->mapel->nama ?? 'Lainnya',
             ];
         }
 
-        $skorKomponen = $this->hitungNilai($attempt);
+        $skorMapel = $this->hitungNilai($attempt);
 
         return response()->json([
             'paket' => $attempt->tryout->paket,
@@ -565,7 +520,7 @@ class UserTryoutController extends Controller
             'kosong' => $kosong,
             'navigasi' => $navigasi,
             'nilai_irt' => round($attempt->nilai, 1),
-            'skor_komponen' => $skorKomponen,
+            'skor_mapel' => $skorMapel,
             // flag untuk frontend menentukan apakah pembahasan dapat dimuat
             'show_pembahasan' => (bool) $attempt->tryout->show_pembahasan,
         ]);
@@ -601,9 +556,9 @@ class UserTryoutController extends Controller
 
         $soalTryout = TryoutSoal::with([
             'banksoal' => function ($q) {
-                $q->select('id', 'komponen_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
+                $q->select('id', 'mapel_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
             },
-            'banksoal.komponen'
+            'banksoal.mapel'
         ])
             ->where('tryout_id', $tryoutId)
             ->orderBy('urutan')
@@ -656,7 +611,7 @@ class UserTryoutController extends Controller
                 'is_correct' => $jawaban ? (is_null($jawaban->is_correct) ? null : ((int) $jawaban->is_correct === 1)) : null,
                 'pembahasan' => $bankSoal->pembahasan,
                 'poin_diperoleh' => round($poinDiperoleh, 2),
-                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
+                'mapel_nama' => $bankSoal->mapel->nama ?? '-',
                 'tipe' => $bankSoal->tipe,
             ];
         }
@@ -711,86 +666,8 @@ class UserTryoutController extends Controller
         ]);
     }
 
-    public function nextKomponen($id)
-    {
-        $user = Auth::user();
-
-        $attempt = Attempt::where('tryout_id', $id)
-            ->where('user_id', $user->id)
-            ->whereNull('selesai')
-            ->firstOrFail();
-
-        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
-            ->whereNull('selesai')
-            ->first();
-
-        if ($activeKomponen) {
-            $activeKomponen->update([
-                'selesai' => now(),
-                'status' => 'finished'
-            ]);
-        }
-
-        $tryout = Tryout::findOrFail($id);
-        $allKomponen = $tryout->komponen()->orderBy('tryout_komponen.urutan', 'asc')->get();
-
-        $nextKomponen = null;
-        $foundCurrent = false;
-
-        foreach ($allKomponen as $komponen) {
-            if (!$activeKomponen) {
-                // Fallback jika tidak ada active komponen sebelumnya
-                $nextKomponen = $komponen;
-                break;
-            }
-
-            if ($foundCurrent) {
-                $nextKomponen = $komponen;
-                break;
-            }
-
-            if ($komponen->id == $activeKomponen->komponen_id) {
-                $foundCurrent = true;
-            }
-        }
-
-        if ($nextKomponen) {
-            \App\Models\AttemptKomponen::create([
-                'attempt_id' => $attempt->id,
-                'komponen_id' => $nextKomponen->id,
-                'mulai' => now(),
-                'status' => 'ongoing'
-            ]);
-
-            return response()->json([
-                'message' => 'Lanjut ke komponen berikutnya',
-                'komponen_id' => $nextKomponen->id,
-                'is_finished' => false,
-            ]);
-        }
-
-        // Kalau tidak ada komponen lagi
-        $this->finishLogic($attempt);
-
-        return response()->json([
-            'message' => 'Tryout berhasil diselesaikan',
-            'is_finished' => true,
-        ]);
-    }
-
     private function finishLogic($attempt)
     {
-        $activeKomponen = \App\Models\AttemptKomponen::where('attempt_id', $attempt->id)
-            ->whereNull('selesai')
-            ->first();
-
-        if ($activeKomponen) {
-            $activeKomponen->update([
-                'selesai' => now(),
-                'status' => 'finished'
-            ]);
-        }
-
         $attempt->update([
             'selesai' => now(),
             'status' => 'submitted',
@@ -801,8 +678,8 @@ class UserTryoutController extends Controller
 
     public function hitungNilai($attempt)
     {
-        $skorPeserta = []; // key: komponen_id
-        $maxSkor = [];     // key: komponen_id
+        $skorPeserta = []; // key: mapel_id
+        $maxSkor = [];     // key: mapel_id
 
         $semuaSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)->get();
         $jawabanCollection = JawabanPeserta::where('attempt_id', $attempt->id)->get()->keyBy('banksoal_id');
@@ -812,7 +689,7 @@ class UserTryoutController extends Controller
             if (!$bankSoal)
                 continue;
 
-            $kId = $bankSoal->komponen_id;
+            $kId = $bankSoal->mapel_id;
 
             if (!isset($skorPeserta[$kId])) {
                 $skorPeserta[$kId] = 0;
@@ -900,11 +777,11 @@ class UserTryoutController extends Controller
             }
         }
 
-        // --- Konversi ke Skala Dasar SNBT per Komponen ---
+        // --- Konversi ke Skala Dasar SNBT per Mapel ---
         $totalSemuaSkala = 0;
-        $jumlahKomponen = count($maxSkor);
+        $jumlahMapel = count($maxSkor);
         $breakdown = [];
-        $komponens = \App\Models\Komponen::all()->keyBy('id');
+        $mapels = \App\Models\Mapel::all()->keyBy('id');
 
         foreach ($maxSkor as $kId => $max) {
             $peserta = $skorPeserta[$kId] ?? 0;
@@ -912,22 +789,22 @@ class UserTryoutController extends Controller
             if ($max > 0) {
                 $ratio = min($peserta / $max, 1.0);
                 $ratio = max($ratio, 0.0);
-                // Rumus: 200 + ((Skor Mentah Peserta / Max Skor Mentah Komponen) * 750)
+                // Rumus: 200 + ((Skor Mentah Peserta / Max Skor Mentah Mapel) * 750)
                 $skalaIRT = 200 + ($ratio * 750);
             } else {
                 $skalaIRT = 200;
             }
 
             $totalSemuaSkala += $skalaIRT;
-            $namaKomponen = isset($komponens[$kId]) ? $komponens[$kId]->nama_komponen : 'Lainnya';
+            $namaMapel = isset($mapels[$kId]) ? $mapels[$kId]->nama : 'Lainnya';
             $breakdown[] = [
-                'nama' => $namaKomponen,
+                'nama' => $namaMapel,
                 'skor' => round($skalaIRT, 1)
             ];
         }
 
-        // Nilai akhir attempt adalah rata-rata skala komponen
-        $nilaiAkhir = $jumlahKomponen > 0 ? ($totalSemuaSkala / $jumlahKomponen) : 0;
+        // Nilai akhir attempt adalah rata-rata skala mapel
+        $nilaiAkhir = $jumlahMapel > 0 ? ($totalSemuaSkala / $jumlahMapel) : 0;
 
         $attempt->update([
             'nilai' => round($nilaiAkhir, 2)

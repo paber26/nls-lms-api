@@ -23,7 +23,7 @@ use App\Http\Controllers\Api\PesertaController;
 use App\Http\Controllers\Api\UserCodeforcesController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
-use App\Models\Komponen;
+use App\Models\Mapel;
 
 Route::get('/ping', function () {
     return response()->json([
@@ -81,11 +81,7 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('banksoal', BankSoalController::class);
     Route::get('/mapel', function () {
-        return App\Models\Mapel::select('id', 'kode', 'nama', 'tingkat')->orderBy('id')->get();
-    });
-
-    Route::get('/komponen', function () {
-        return Komponen::select('id', 'kode', 'nama_komponen', 'mata_uji')->orderBy('id')->get();
+        return Mapel::select('id', 'kode', 'nama', 'tingkat')->orderBy('id')->get();
     });
 
     Route::get('/users', [UserController::class, 'index']);
@@ -164,7 +160,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/user/tryout/{id}/answer', [UserTryoutController::class, 'answer']);
     Route::post('/user/tryout/{id}/finish', [UserTryoutController::class, 'finish']);
-    Route::post('/user/tryout/{id}/next-komponen', [UserTryoutController::class, 'nextKomponen']);
     // Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}/pembahasan', [UserTryoutController::class, 'pembahasan']);

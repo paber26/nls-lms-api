@@ -9,16 +9,16 @@ class BankSoal extends Model
 {
     use HasFactory;
 
-    protected $table = 'banksoal'; // 👈 INI KUNCINYA
+    protected $table = 'banksoal';
 
     protected $fillable = [
-        'komponen_id',
+        'mapel_id',
         'tipe',
         'pertanyaan',
         'pembahasan',
         'jawaban',
         'idopsijawaban',
-        'created_by'
+        'created_by',
     ];
 
     public function creator()
@@ -26,9 +26,9 @@ class BankSoal extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function komponen()
+    public function mapel()
     {
-        return $this->belongsTo(Komponen::class, 'komponen_id');
+        return $this->belongsTo(Mapel::class, 'mapel_id');
     }
 
     public function opsiJawaban()
@@ -43,10 +43,6 @@ class BankSoal extends Model
 
     public function pernyataanKompleks()
     {
-        return $this->hasMany(
-            BankSoalPernyataan::class,
-            'banksoal_id'
-        )->orderBy('urutan');
+        return $this->hasMany(BankSoalPernyataan::class, 'banksoal_id')->orderBy('urutan');
     }
-
 }
