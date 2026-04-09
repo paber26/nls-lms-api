@@ -172,4 +172,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/cp/problems/{id}', [UserCodeforcesController::class, 'show']);
     Route::get('/user/cp/problems/{id}/info', [UserCodeforcesController::class, 'info']);
     Route::post('/user/cp/problems/{id}/sync', [UserCodeforcesController::class, 'sync']);
+    Route::post('/user/cp/link-handle', [UserCodeforcesController::class, 'linkHandle']);
 });

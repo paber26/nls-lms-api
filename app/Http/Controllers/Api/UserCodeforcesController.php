@@ -163,4 +163,38 @@ class UserCodeforcesController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Tautkan akun Codeforces ke profil user (disertai validasi ke API CF)
+     */
+    public function linkHandle(Request $request, CodeforcesService $cfService)
+    {
+        $request->validate([
+            'cf_handle' => 'required|string|max:64',
+        ]);
+
+        $handle = $request->cf_handle;
+        $user = $request->user();
+
+        try {
+            // Validasi apakah handle tersebut benar-benar ada di Codeforces
+            $cfService->getUserInfo($handle);
+
+            // Jika valid, simpan ke database
+            $user->update(['cf_handle' => $handle]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Akun Codeforces berhasil ditautkan!',
+                'data' => [
+                    'cf_handle' => $handle
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Username Codeforces tidak ditemukan. Pastikan Anda sudah mendaftar di codeforces.com.'
+            ], 422);
+        }
+    }
 }
