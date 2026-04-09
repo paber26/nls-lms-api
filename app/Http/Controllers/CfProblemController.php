@@ -64,7 +64,21 @@ class CfProblemController extends Controller
     public function statement(CfProblem $cfProblem, \App\Services\CodeforcesService $codeforces): JsonResponse
     {
         try {
-            $html = $codeforces->getProblemStatementHtml($cfProblem->cf_contest_id, $cfProblem->cf_index);
+            $html = $cfProblem->statement_html;
+            
+            if (empty($html)) {
+                $html = $codeforces->getProblemStatementHtml($cfProblem->cf_contest_id, $cfProblem->cf_index);
+                if ($html) {
+                    $cfProblem->statement_html = $html;
+                    $cfProblem->save();
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Gagal mengambil deskripsi soal (Terblokir Cloudflare)'
+                    ], 500);
+                }
+            }
+            
             return response()->json([
                 'success' => true,
                 'data' => $html
