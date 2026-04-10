@@ -92,13 +92,13 @@ class UserTryoutController extends Controller
 
             if ($submittedAccessKey === '') {
                 return response()->json([
-                    'message' => 'Tryout ini membutuhkan kunci akses. Masukkan kunci akses yang diberikan admin atau guru Anda.'
+                    'message' => 'Tryout ini membutuhkan kode akses / password. Masukkan kode akses yang diberikan admin.'
                 ], 422);
             }
 
             if ($submittedAccessKey !== $storedAccessKey) {
                 return response()->json([
-                    'message' => 'Kunci akses tidak valid. Periksa kembali atau hubungi admin/guru Anda.'
+                    'message' => 'Kode akses atau password tidak valid. Periksa kembali atau hubungi admin Anda.'
                 ], 422);
             }
         }

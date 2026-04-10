@@ -53,6 +53,7 @@ class TryoutController extends Controller
             'status' => $tryout->status,
             'ketentuan_khusus' => $tryout->ketentuan_khusus,
             'pesan_selesai' => $tryout->pesan_selesai,
+            'access_key' => $tryout->access_key,
             'show_pembahasan' => (bool) $tryout->show_pembahasan,
         ]);
     }
@@ -65,8 +66,8 @@ class TryoutController extends Controller
             'durasi_menit' => 'required|integer|min:1',
             'mulai' => 'required|date',
             'selesai' => 'required|date|after_or_equal:mulai',
-            'access_key' => 'nullable|string|max:255',
             'status' => 'nullable|in:draft,active,finished',
+            'access_key' => 'nullable|string|max:255',
             'ketentuan_khusus' => 'nullable|string',
             'pesan_selesai' => 'nullable|string',
         ]);
@@ -79,6 +80,7 @@ class TryoutController extends Controller
             'selesai' => $data['selesai'],
             'status' => $data['status'] ?? 'draft',
             'created_by' => $request->user()?->id,
+            'access_key' => $data['access_key'] ?? null,
             'ketentuan_khusus' => $data['ketentuan_khusus'] ?? null,
             'pesan_selesai' => $data['pesan_selesai'] ?? null,
         ]);
@@ -112,6 +114,7 @@ class TryoutController extends Controller
             'mulai' => $data['mulai'],
             'selesai' => $data['selesai'],
             'status' => $data['status'],
+            'access_key' => $data['access_key'] ?? null,
             'created_by' => $request->user()?->id,
             'ketentuan_khusus' => $data['ketentuan_khusus'] ?? null,
             'pesan_selesai' => $data['pesan_selesai'] ?? null,
