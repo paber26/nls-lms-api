@@ -140,15 +140,13 @@ class CpTryoutPackageController extends Controller
         $includeAll = filter_var($request->query('include_all', false), FILTER_VALIDATE_BOOLEAN);
 
         $participantsQuery = User::query()
-            ->select('id', 'name', 'nama_lengkap', 'sekolah_nama', 'cf_handle')
-            ->whereNotNull('cf_handle')
-            ->where('cf_handle', '<>', '')
+            ->select('id', 'name', 'nama_lengkap', 'sekolah_nama')
             ->where(function ($query) {
                 $query->whereNull('role')->orWhere('role', '<>', 'admin');
             });
 
         if (!$includeAll) {
-            $participantsQuery->whereHas('submissions', function ($q) use ($problemIds) {
+            $participantsQuery->whereHas('cpSubmissions', function ($q) use ($problemIds) {
                 $q->whereIn('problem_id', $problemIds);
             });
         }
@@ -225,6 +223,45 @@ class CpTryoutPackageController extends Controller
             'data' => [
                 'paket' => $this->buildPackageSummary($package),
                 'leaderboard' => $rankedRows,
+            ],
+        ]);
+    }
+
+    public function submissionsList(Request $request, int $id): JsonResponse
+    {
+        $package = CpTryoutPackage::findOrFail($id);
+        $problemIds = $package->problems()->pluck('cp_problems.id');
+
+        $submissions = CpSubmission::whereIn('problem_id', $problemIds)
+            ->with(['user:id,name,nama_lengkap', 'problem:id,title'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        $languages = [
+            54 => 'C++',
+            71 => 'Python',
+            62 => 'Java'
+        ];
+
+        $data = $submissions->map(function ($sub) use ($languages) {
+            return [
+                'id' => $sub->id,
+                'user' => $sub->user->nama_lengkap ?: $sub->user->name,
+                'problem_title' => $sub->problem->title ?? 'Unknown',
+                'language' => $languages[$sub->language_id] ?? 'Unknown',
+                'verdict' => $sub->verdict,
+                'execution_time' => $sub->execution_time,
+                'memory_used' => $sub->memory_used,
+                'created_at' => $sub->created_at->format('Y-m-d H:i:s'),
+                'time_ago' => $sub->created_at->diffForHumans()
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'paket' => $this->buildPackageSummary($package),
+                'submissions' => $data,
             ],
         ]);
     }

@@ -117,6 +117,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', [CpTryoutPackageController::class, 'update']);
         Route::put('/{id}/problems', [CpTryoutPackageController::class, 'syncProblems']);
         Route::get('/{id}/leaderboard', [CpTryoutPackageController::class, 'leaderboard']);
+        Route::get('/{id}/submissions', [CpTryoutPackageController::class, 'submissionsList']);
     });
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);

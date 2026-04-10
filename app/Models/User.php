@@ -83,4 +83,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\UserCfSubmission::class);
     }
+
+    public function cpSubmissions()
+    {
+        return $this->hasMany(\App\Models\CpSubmission::class);
+    }
 }
