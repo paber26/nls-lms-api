@@ -102,12 +102,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/problems/resolve', [CodeforcesController::class, 'problemByUrl']);
     });
 
-    Route::middleware(EnsureAdminRole::class)->prefix('cf-problems')->group(function () {
-        Route::get('/', [\App\Http\Controllers\CfProblemController::class, 'index']);
-        Route::post('/', [\App\Http\Controllers\CfProblemController::class, 'store']);
-        Route::get('/{cfProblem}/statement', [\App\Http\Controllers\CfProblemController::class, 'statement']);
-        Route::put('/{cfProblem}', [\App\Http\Controllers\CfProblemController::class, 'update']);
-        Route::delete('/{cfProblem}', [\App\Http\Controllers\CfProblemController::class, 'destroy']);
+    Route::middleware(EnsureAdminRole::class)->prefix('cp-problems')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\CpProblemController::class, 'index']);
+        Route::post('/', [\App\Http\Controllers\Admin\CpProblemController::class, 'store']);
+        Route::get('/{id}', [\App\Http\Controllers\Admin\CpProblemController::class, 'show']);
+        Route::put('/{id}', [\App\Http\Controllers\Admin\CpProblemController::class, 'update']);
+        Route::delete('/{id}', [\App\Http\Controllers\Admin\CpProblemController::class, 'destroy']);
     });
 
     Route::middleware(EnsureAdminRole::class)->prefix('cp-tryout-packages')->group(function () {
@@ -174,11 +174,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/tryout/hasil/{tryoutId}', [UserTryoutController::class, 'hasil']);
     Route::get('/user/tryout/hasil/{tryoutId}/pembahasan', [UserTryoutController::class, 'pembahasan']);
 
-    // Competitive Programming endpoints
-    Route::get('/user/cp/problems', [UserCodeforcesController::class, 'index']);
-    Route::get('/user/cp/problems/{id}', [UserCodeforcesController::class, 'show']);
-    Route::get('/user/cp/problems/{id}/info', [UserCodeforcesController::class, 'info']);
-    Route::post('/user/cp/problems/{id}/sync', [UserCodeforcesController::class, 'sync']);
-    Route::post('/user/cp/link-handle', [UserCodeforcesController::class, 'linkHandle']);
-    Route::get('/user/cp/leaderboard', [UserCodeforcesController::class, 'leaderboard']);
+    // Competitive Programming endpoints (Native IDE)
+    Route::get('/user/cp/problems/{id}', [\App\Http\Controllers\User\CpSubmissionController::class, 'getProblem']);
+    Route::post('/user/cp/problems/{id}/submit', [\App\Http\Controllers\User\CpSubmissionController::class, 'submitCode']);
+    
+    // (We leave package functionality unchanged for now, but commented out or pointing to empty endpoints until adapted)
 });

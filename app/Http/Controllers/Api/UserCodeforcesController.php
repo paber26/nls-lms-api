@@ -5,12 +5,98 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\CfProblem;
+use App\Models\CpTryoutPackage;
 use App\Models\UserCfSubmission;
 use App\Models\UserCpScore;
 use App\Services\CodeforcesService;
 
 class UserCodeforcesController extends Controller
 {
+    /**
+     * Tampilkan daftar paket CP aktif yang dibuat admin.
+     */
+    public function packages()
+    {
+        $packages = CpTryoutPackage::query()
+            ->withCount('problems')
+            ->where('status', 'active')
+            ->orderByDesc('created_at')
+            ->get()
+            ->map(function ($package) {
+                return [
+                    'id' => $package->id,
+                    'nama_paket' => $package->nama_paket,
+                    'durasi_menit' => (int) $package->durasi_menit,
+                    'jumlah_soal' => (int) $package->problems_count,
+                    'mulai' => $package->mulai,
+                    'selesai' => $package->selesai,
+                    'status' => $package->status,
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $packages,
+        ]);
+    }
+
+    /**
+     * Tampilkan soal dalam paket CP tertentu.
+     */
+    public function packageProblems(Request $request, $packageId)
+    {
+        $user = $request->user();
+
+        $package = CpTryoutPackage::query()
+            ->where('status', 'active')
+            ->with(['problems' => function ($query) {
+                $query->with('mapel')
+                    ->orderBy('cp_tryout_package_problems.urutan')
+                    ->orderBy('cf_contest_id')
+                    ->orderBy('cf_index');
+            }])
+            ->findOrFail($packageId);
+
+        $problemIds = $package->problems->pluck('id')->all();
+
+        $solvedIds = [];
+        if (!empty($problemIds)) {
+            $solvedIds = UserCfSubmission::where('user_id', $user->id)
+                ->where('verdict', 'OK')
+                ->whereIn('cf_problem_id', $problemIds)
+                ->pluck('cf_problem_id')
+                ->toArray();
+        }
+
+        $problemsData = $package->problems->map(function ($problem) use ($solvedIds) {
+            return [
+                'id' => $problem->id,
+                'cf_contest_id' => $problem->cf_contest_id,
+                'cf_index' => $problem->cf_index,
+                'name' => $problem->name,
+                'mapel' => $problem->mapel ? $problem->mapel->nama : 'Informatika',
+                'tags' => $problem->tags,
+                'rating' => $problem->rating,
+                'points' => $problem->points,
+                'is_solved' => in_array($problem->id, $solvedIds),
+                'urutan' => (int) ($problem->pivot?->urutan ?? 0),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'package' => [
+                    'id' => $package->id,
+                    'nama_paket' => $package->nama_paket,
+                    'durasi_menit' => (int) $package->durasi_menit,
+                    'jumlah_soal' => (int) $package->problems->count(),
+                ],
+                'problems' => $problemsData,
+            ]
+        ]);
+    }
+
     /**
      * Tampilkan semua daftar soal Codeforces yang tersedia untuk dikerjakan.
      */
