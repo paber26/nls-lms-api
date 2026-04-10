@@ -254,4 +254,32 @@ class CpSubmissionController extends Controller
             ], 200);
         }
     }
+
+    public function show($id)
+    {
+        $submission = CpSubmission::with(['user:id,name,nama_lengkap', 'problem:id,title'])->findOrFail($id);
+
+        $languages = [
+            54 => 'C++',
+            71 => 'Python',
+            62 => 'Java'
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $submission->id,
+                'user' => $submission->user ? ($submission->user->nama_lengkap ?: $submission->user->name) : '-',
+                'problem_title' => $submission->problem->title ?? 'Unknown',
+                'language' => $languages[$submission->language_id] ?? 'Unknown',
+                'verdict' => $submission->verdict,
+                'execution_time' => $submission->execution_time,
+                'memory_used' => $submission->memory_used,
+                'source_code' => $submission->source_code,
+                'judge0_response' => json_decode($submission->judge0_response),
+                'created_at' => $submission->created_at->format('Y-m-d H:i:s'),
+                'time_ago' => $submission->created_at->diffForHumans()
+            ]
+        ]);
+    }
 }

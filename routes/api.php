@@ -118,6 +118,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}/problems', [CpTryoutPackageController::class, 'syncProblems']);
         Route::get('/{id}/leaderboard', [CpTryoutPackageController::class, 'leaderboard']);
         Route::get('/{id}/submissions', [CpTryoutPackageController::class, 'submissionsList']);
+        Route::get('/submission-detail/{submission_id}', [\App\Http\Controllers\User\CpSubmissionController::class, 'show']); // Shared method for admin
     });
 
     Route::get('/banksoal', [BankSoalController::class, 'index']);
@@ -179,6 +180,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/cp/problems/{id}', [\App\Http\Controllers\User\CpSubmissionController::class, 'getProblem']);
     Route::get('/user/cp/problems/{id}/submissions', [\App\Http\Controllers\User\CpSubmissionController::class, 'submissions']);
     Route::post('/user/cp/problems/{id}/submit', [\App\Http\Controllers\User\CpSubmissionController::class, 'submitCode']);
+    Route::get('/user/cp/submissions/{id}', [\App\Http\Controllers\User\CpSubmissionController::class, 'show']);
     
     Route::get('/user/cp/packages', [\App\Http\Controllers\User\CpSubmissionController::class, 'packages']);
     Route::get('/user/cp/packages/{id}/problems', [\App\Http\Controllers\User\CpSubmissionController::class, 'packageProblems']);
