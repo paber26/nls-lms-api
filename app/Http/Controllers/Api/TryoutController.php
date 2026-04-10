@@ -54,6 +54,7 @@ class TryoutController extends Controller
             'ketentuan_khusus' => $tryout->ketentuan_khusus,
             'pesan_selesai' => $tryout->pesan_selesai,
             'access_key' => $tryout->access_key,
+            'access_key_info' => $tryout->access_key_info,
             'show_pembahasan' => (bool) $tryout->show_pembahasan,
         ]);
     }
@@ -68,6 +69,7 @@ class TryoutController extends Controller
             'selesai' => 'required|date|after_or_equal:mulai',
             'status' => 'nullable|in:draft,active,finished',
             'access_key' => 'nullable|string|max:255',
+            'access_key_info' => 'nullable|string|max:500',
             'ketentuan_khusus' => 'nullable|string',
             'pesan_selesai' => 'nullable|string',
         ]);
@@ -81,6 +83,7 @@ class TryoutController extends Controller
             'status' => $data['status'] ?? 'draft',
             'created_by' => $request->user()?->id,
             'access_key' => $data['access_key'] ?? null,
+            'access_key_info' => $data['access_key_info'] ?? null,
             'ketentuan_khusus' => $data['ketentuan_khusus'] ?? null,
             'pesan_selesai' => $data['pesan_selesai'] ?? null,
         ]);
@@ -102,6 +105,7 @@ class TryoutController extends Controller
             'selesai' => 'required|date|after_or_equal:mulai',
             'status' => 'required|in:draft,active,finished',
             'access_key' => 'nullable|string|max:255',
+            'access_key_info' => 'nullable|string|max:500',
             'ketentuan_khusus' => 'nullable|string',
             'pesan_selesai' => 'nullable|string',
         ]);
@@ -115,6 +119,7 @@ class TryoutController extends Controller
             'selesai' => $data['selesai'],
             'status' => $data['status'],
             'access_key' => $data['access_key'] ?? null,
+            'access_key_info' => $data['access_key_info'] ?? null,
             'created_by' => $request->user()?->id,
             'ketentuan_khusus' => $data['ketentuan_khusus'] ?? null,
             'pesan_selesai' => $data['pesan_selesai'] ?? null,

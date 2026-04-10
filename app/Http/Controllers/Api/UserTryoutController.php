@@ -76,6 +76,7 @@ class UserTryoutController extends Controller
                 'selesai' => $tryout->selesai,
                 'ketentuan_khusus' => $tryout->ketentuan_khusus,
                 'requires_access_key' => filled(trim((string) $tryout->access_key)),
+                'access_key_info' => $tryout->access_key_info,
             ]
         ]);
     }
