@@ -75,6 +75,7 @@ class CpSubmissionController extends Controller
                     'id' => $package->id,
                     'nama_paket' => $package->nama_paket,
                     'durasi_menit' => (int) $package->durasi_menit,
+                    'selesai' => $package->selesai,
                     'jumlah_soal' => (int) $package->problems->count(),
                 ],
                 'problems' => $problemsData,
