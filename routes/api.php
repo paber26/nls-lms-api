@@ -175,3 +175,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/cp/packages', [\App\Http\Controllers\User\CpSubmissionController::class, 'packages']);
     Route::get('/user/cp/packages/{id}/problems', [\App\Http\Controllers\User\CpSubmissionController::class, 'packageProblems']);
 });
+
+Route::get('/recalc', function () {
+    set_time_limit(0);
+    $controller = new \App\Http\Controllers\Api\UserTryoutController();
+
+    $attempts = \App\Models\Attempt::where(function ($q) {
+        $q->whereNotNull('selesai')->orWhere('status', 'submitted');
+    })
+        ->whereBetween('selesai', ['2026-04-09 00:00:00', '2026-04-13 23:59:59'])
+        ->get();
+
+    $count = 0;
+    $log = "Memulai penghitungan ulang nilai khusus 9 - 13 April 2026...\n";
+
+    foreach ($attempts as $attempt) {
+        $oldNilai = $attempt->nilai;
+        $controller->hitungNilai($attempt);
+        $attempt->refresh();
+        $log .= "Attempt ID {$attempt->id} (User: {$attempt->user_id}, Selesai: {$attempt->selesai}) - Nilai: {$oldNilai} -> {$attempt->nilai}\n";
+        $count++;
+    }
+
+    $log .= "Berhasil menghitung ulang nilai untuk $count attempt.\n";
+    return response($log, 200)->header('Content-Type', 'text/plain');
+});

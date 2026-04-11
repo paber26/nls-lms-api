@@ -779,37 +779,24 @@ class UserTryoutController extends Controller
             }
         }
 
-        // --- Konversi ke Skala Dasar SNBT per Mapel ---
-        $totalSemuaSkala = 0;
-        $jumlahMapel = count($maxSkor);
+        // --- Rekapitulasi Nilai (Tanpa Konversi SNBT) ---
+        $totalSkorPeserta = 0;
         $breakdown = [];
         $mapels = \App\Models\Mapel::all()->keyBy('id');
 
         foreach ($maxSkor as $kId => $max) {
             $peserta = $skorPeserta[$kId] ?? 0;
+            $totalSkorPeserta += $peserta;
 
-            if ($max > 0) {
-                $ratio = min($peserta / $max, 1.0);
-                $ratio = max($ratio, 0.0);
-                // Rumus: 200 + ((Skor Mentah Peserta / Max Skor Mentah Mapel) * 750)
-                $skalaIRT = 200 + ($ratio * 750);
-            } else {
-                $skalaIRT = 200;
-            }
-
-            $totalSemuaSkala += $skalaIRT;
             $namaMapel = isset($mapels[$kId]) ? $mapels[$kId]->nama : 'Lainnya';
             $breakdown[] = [
                 'nama' => $namaMapel,
-                'skor' => round($skalaIRT, 1)
+                'skor' => round($peserta, 1)
             ];
         }
 
-        // Nilai akhir attempt adalah rata-rata skala mapel
-        $nilaiAkhir = $jumlahMapel > 0 ? ($totalSemuaSkala / $jumlahMapel) : 0;
-
         $attempt->update([
-            'nilai' => round($nilaiAkhir, 2)
+            'nilai' => round($totalSkorPeserta, 2)
         ]);
 
         return $breakdown;
