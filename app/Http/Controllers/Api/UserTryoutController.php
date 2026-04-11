@@ -47,6 +47,7 @@ class UserTryoutController extends Controller
                     'jumlah_soal' => $tryout->questions_count ?? 0,
                     'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                     'status' => $status,
+                    'requires_access_key' => filled(trim((string) $tryout->access_key)),
                 ];
             });
 

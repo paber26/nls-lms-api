@@ -31,6 +31,7 @@ class TryoutController extends Controller
                 'mulai' => $item->mulai,
                 'selesai' => $item->selesai,
                 'created_at' => optional($item->created_at)->format('Y-m-d'),
+                'requires_access_key' => filled(trim((string) $item->access_key)),
             ];
         });
 

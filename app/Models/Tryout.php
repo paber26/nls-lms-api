@@ -19,6 +19,8 @@ class Tryout extends Model
         'ketentuan_khusus',
         'pesan_selesai',
         'show_pembahasan',
+        'access_key',
+        'access_key_info',
     ];
 
     protected $casts = [
