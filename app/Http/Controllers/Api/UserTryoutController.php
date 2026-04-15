@@ -25,10 +25,21 @@ class UserTryoutController extends Controller
                 'attempts' => function ($q) use ($user) {
                     $q->where('user_id', $user->id);
                 },
-                'mapel'
+                'komponen'
             ])
+            ->get();
+
+        $tryoutIds = $tryouts->pluck('id')->toArray();
+        $cakupanInfo = \Illuminate\Support\Facades\DB::table('tryout_soal')
+            ->join('banksoal', 'tryout_soal.banksoal_id', '=', 'banksoal.id')
+            ->join('komponen', 'banksoal.komponen_id', '=', 'komponen.id')
+            ->whereIn('tryout_soal.tryout_id', $tryoutIds)
+            ->select('tryout_soal.tryout_id', 'komponen.nama_komponen')
+            ->distinct()
             ->get()
-            ->map(function ($tryout) {
+            ->groupBy('tryout_id');
+
+        $result = $tryouts->map(function ($tryout) use ($cakupanInfo) {
                 $attempt = $tryout->attempts->first();
 
                 if (!$attempt) {
@@ -37,13 +48,16 @@ class UserTryoutController extends Controller
                     $status = $attempt->status;
                 }
 
-                $mapel = $tryout->mapel;
+                $komponen = $tryout->komponen;
+                $c = $cakupanInfo->get($tryout->id);
+                $cakupanKomponen = $c ? $c->pluck('nama_komponen')->toArray() : [];
 
                 return [
                     'id' => $tryout->id,
                     'nama' => $tryout->paket ?? $tryout->nama,
-                    'jenjang' => $mapel->tingkat ?? '-',
-                    'mapel' => $mapel->nama ?? '-',
+                    'jenjang' => $komponen->mata_uji ?? '-',
+                    'komponen' => $komponen->nama_komponen ?? '-',
+                    'cakupan_komponen' => $cakupanKomponen,
                     'jumlah_soal' => $tryout->questions_count ?? 0,
                     'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                     'status' => $status,
@@ -52,7 +66,7 @@ class UserTryoutController extends Controller
             });
 
         return response()->json([
-            'data' => $tryouts
+            'data' => $result
         ]);
     }
 
@@ -60,17 +74,17 @@ class UserTryoutController extends Controller
     {
         $tryout = Tryout::where('status', 'active')
             ->withCount('questions')
-            ->with('mapel')
+            ->with('komponen')
             ->findOrFail($id);
 
-        $mapel = $tryout->mapel;
+        $komponen = $tryout->komponen;
 
         return response()->json([
             'data' => [
                 'id' => $tryout->id,
                 'nama' => $tryout->paket ?? $tryout->nama,
-                'jenjang' => $mapel->tingkat ?? '-',
-                'mapel' => $mapel->nama ?? '-',
+                'jenjang' => $komponen->mata_uji ?? '-',
+                'komponen' => $komponen->nama_komponen ?? '-',
                 'jumlah_soal' => $tryout->questions_count ?? 0,
                 'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                 'mulai' => $tryout->mulai,
@@ -142,8 +156,8 @@ class UserTryoutController extends Controller
                 'durasi_menit' => $tryout->durasi_menit ?? 0,
                 'waktu_selesai' => null,
                 'sisa_detik' => 0,
-                'mapel_id' => $tryout->mapel_id,
-                'mapel_nama' => $tryout->mapel?->nama ?? '-',
+                'komponen_id' => $tryout->komponen->pluck('id')->first(),
+                'komponen_nama' => $tryout->komponen->isNotEmpty() ? $tryout->komponen->pluck('nama_komponen')->implode(', ') : '-',
             ]);
         }
 
@@ -160,8 +174,8 @@ class UserTryoutController extends Controller
             'durasi_menit' => $durasiMenit,
             'waktu_selesai' => $waktuSelesai,
             'sisa_detik' => $sisaDetik,
-            'mapel_id' => $tryout->mapel_id,
-            'mapel_nama' => $tryout->mapel?->nama ?? '-',
+            'komponen_id' => $tryout->komponen->pluck('id')->first(),
+            'komponen_nama' => $tryout->komponen->isNotEmpty() ? $tryout->komponen->pluck('nama_komponen')->implode(', ') : '-',
         ]);
     }
 
@@ -225,7 +239,7 @@ class UserTryoutController extends Controller
                 'jawaban' => $jawaban ?? [],
                 'peserta' => $user->name,
                 'total_soal' => $totalSoal,
-                'mapel_nama' => $bankSoal->mapel->nama ?? '-',
+                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
             ];
         }
 
@@ -507,11 +521,11 @@ class UserTryoutController extends Controller
             $navigasi[] = [
                 'nomor' => $index + 1,
                 'status' => $status,
-                'mapel' => $bankSoal->mapel->nama ?? 'Lainnya',
+                'komponen' => $bankSoal->komponen->nama_komponen ?? 'Lainnya',
             ];
         }
 
-        $skorMapel = $this->hitungNilai($attempt);
+        $skorKomponen = $this->hitungNilai($attempt);
 
         return response()->json([
             'paket' => $attempt->tryout->paket,
@@ -522,7 +536,7 @@ class UserTryoutController extends Controller
             'kosong' => $kosong,
             'navigasi' => $navigasi,
             'nilai_irt' => round($attempt->nilai, 1),
-            'skor_mapel' => $skorMapel,
+            'skor_komponen' => $skorKomponen,
             // flag untuk frontend menentukan apakah pembahasan dapat dimuat
             'show_pembahasan' => (bool) $attempt->tryout->show_pembahasan,
         ]);
@@ -558,9 +572,9 @@ class UserTryoutController extends Controller
 
         $soalTryout = TryoutSoal::with([
             'banksoal' => function ($q) {
-                $q->select('id', 'mapel_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
+                $q->select('id', 'komponen_id', 'pertanyaan', 'pembahasan', 'jawaban', 'tipe');
             },
-            'banksoal.mapel'
+            'banksoal.komponen'
         ])
             ->where('tryout_id', $tryoutId)
             ->orderBy('urutan')
@@ -613,7 +627,7 @@ class UserTryoutController extends Controller
                 'is_correct' => $jawaban ? (is_null($jawaban->is_correct) ? null : ((int) $jawaban->is_correct === 1)) : null,
                 'pembahasan' => $bankSoal->pembahasan,
                 'poin_diperoleh' => round($poinDiperoleh, 2),
-                'mapel_nama' => $bankSoal->mapel->nama ?? '-',
+                'komponen_nama' => $bankSoal->komponen->nama_komponen ?? '-',
                 'tipe' => $bankSoal->tipe,
             ];
         }
@@ -680,8 +694,8 @@ class UserTryoutController extends Controller
 
     public function hitungNilai($attempt)
     {
-        $skorPeserta = []; // key: mapel_id
-        $maxSkor = [];     // key: mapel_id
+        $skorPeserta = []; // key: komponen_id
+        $maxSkor = [];     // key: komponen_id
 
         $semuaSoal = TryoutSoal::where('tryout_id', $attempt->tryout_id)->get();
         $jawabanCollection = JawabanPeserta::where('attempt_id', $attempt->id)->get()->keyBy('banksoal_id');
@@ -779,11 +793,11 @@ class UserTryoutController extends Controller
             }
         }
 
-        // --- Konversi ke Skala Dasar SNBT per Mapel ---
+        // --- Konversi ke Skala Dasar SNBT per Komponen ---
         $totalSemuaSkala = 0;
-        $jumlahMapel = count($maxSkor);
+        $jumlahKomponen = count($maxSkor);
         $breakdown = [];
-        $mapels = \Illuminate\Support\Facades\DB::table('komponen')->get()->keyBy('id');
+        $komponens = \Illuminate\Support\Facades\DB::table('komponen')->get()->keyBy('id');
 
         foreach ($maxSkor as $kId => $max) {
             $peserta = $skorPeserta[$kId] ?? 0;
@@ -791,22 +805,22 @@ class UserTryoutController extends Controller
             if ($max > 0) {
                 $ratio = min($peserta / $max, 1.0);
                 $ratio = max($ratio, 0.0);
-                // Rumus: 200 + ((Skor Mentah Peserta / Max Skor Mentah Mapel) * 750)
+                // Rumus: 200 + ((Skor Mentah Peserta / Max Skor Mentah Komponen) * 750)
                 $skalaIRT = 200 + ($ratio * 750);
             } else {
                 $skalaIRT = 200;
             }
 
             $totalSemuaSkala += $skalaIRT;
-            $namaMapel = isset($mapels[$kId]) ? $mapels[$kId]->nama_komponen : 'Lainnya';
+            $namaKomponen = isset($komponens[$kId]) ? $komponens[$kId]->nama_komponen : 'Lainnya';
             $breakdown[] = [
-                'nama' => $namaMapel,
+                'nama' => $namaKomponen,
                 'skor' => round($skalaIRT, 1)
             ];
         }
 
-        // Nilai akhir attempt adalah rata-rata skala mapel
-        $nilaiAkhir = $jumlahMapel > 0 ? ($totalSemuaSkala / $jumlahMapel) : 0;
+        // Nilai akhir attempt adalah rata-rata skala komponen
+        $nilaiAkhir = $jumlahKomponen > 0 ? ($totalSemuaSkala / $jumlahKomponen) : 0;
 
         $attempt->update([
             'nilai' => round($nilaiAkhir, 2),

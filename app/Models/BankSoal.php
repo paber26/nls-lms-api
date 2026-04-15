@@ -12,7 +12,7 @@ class BankSoal extends Model
     protected $table = 'banksoal';
 
     protected $fillable = [
-        'mapel_id',
+        'komponen_id',
         'tipe',
         'pertanyaan',
         'pembahasan',
@@ -26,13 +26,9 @@ class BankSoal extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    public function mapel()
-    {
-        return $this->belongsTo(Mapel::class, 'komponen_id');
-    }
     public function komponen()
     {
-        return $this->belongsTo(Mapel::class, 'komponen_id');
+        return $this->belongsTo(Komponen::class, 'komponen_id');
     }
 
     public function opsiJawaban()

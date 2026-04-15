@@ -22,7 +22,7 @@ use App\Http\Controllers\Api\PesertaController;
 use App\Http\Controllers\Api\CpTryoutPackageController;
 // use app/Http/Controllers/api/AuthController.php
 use Illuminate\Http\Request;
-use App\Models\Mapel;
+        
 
 Route::get('/ping', function () {
     return response()->json([
@@ -45,7 +45,7 @@ Route::get('/user', function (Request $request) {
 
 
 
-Route::get('/debug-db', function() { return response()->json(\App\Models\Attempt::whereNotNull("nilai_komponen")->first()); });
+Route::get('/debug-db', function() { return response()->json(\Illuminate\Support\Facades\DB::table('tryout_komponen')->get()); });
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     $user = $request->user();
 
@@ -86,11 +86,7 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 // Route::apiResource('banksoal', BankSoalController::class);
 Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('banksoal', BankSoalController::class);
-    Route::get('/mapel', function () {
-        return \Illuminate\Support\Facades\DB::table('komponen')
-            ->select('id', 'kode', 'nama_komponen as nama', 'mata_uji as tingkat')
-            ->orderBy('id')->get();
-    });
+        
     Route::get('/komponen', function () {
         return \Illuminate\Support\Facades\DB::table('komponen')
             ->select('id', 'kode', 'nama_komponen as nama', 'mata_uji as tingkat', 'nama_komponen', 'mata_uji')

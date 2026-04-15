@@ -76,7 +76,7 @@ class MonitoringTryoutController extends Controller
                 ->select(
                     'tryout_soal.banksoal_id',
                     'tryout_soal.urutan',
-                    'komponen.nama_komponen as mapel_nama'
+                    'komponen.nama_komponen as komponen_nama'
                 )
                 ->get()
                 ->keyBy('banksoal_id');
@@ -103,7 +103,7 @@ class MonitoringTryoutController extends Controller
                             if ($info) {
                                 return [
                                     'num' => $info->urutan,
-                                    'komponen' => $info->mapel_nama
+                                    'komponen' => $info->komponen_nama
                                 ];
                             }
                             return null;
@@ -113,9 +113,9 @@ class MonitoringTryoutController extends Controller
                         ->sortBy('num')
                         ->values();
 
-                    $answeredNumbersGroups = $answeredRaw->groupBy('komponen')->map(function ($items, $mapel) {
+                    $answeredNumbersGroups = $answeredRaw->groupBy('komponen')->map(function ($items, $namaKomponen) {
                         return [
-                            'komponen' => $mapel,
+                            'komponen' => $namaKomponen,
                             'numbers' => $items->pluck('num')->toArray(),
                         ];
                     })->values()->toArray();
@@ -232,7 +232,7 @@ class MonitoringTryoutController extends Controller
         $soalInfoByBanksoal = TryoutSoal::join('banksoal', 'tryout_soal.banksoal_id', '=', 'banksoal.id')
             ->join('komponen', 'banksoal.komponen_id', '=', 'komponen.id')
             ->where('tryout_soal.tryout_id', $tryoutId)
-            ->select('tryout_soal.banksoal_id', 'komponen.nama_komponen as mapel_nama')
+            ->select('tryout_soal.banksoal_id', 'komponen.nama_komponen as komponen_nama')
             ->get()
             ->keyBy('banksoal_id');
 
@@ -272,7 +272,7 @@ class MonitoringTryoutController extends Controller
             );
 
             $totalPoin += $poinDiperoleh;
-            $komponen = $soalInfoByBanksoal->get($bankSoal->id)?->mapel_nama ?? '-';
+            $komponen = $soalInfoByBanksoal->get($bankSoal->id)?->komponen_nama ?? '-';
 
             $answers[] = [
                 'id' => $bankSoal->id,

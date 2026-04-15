@@ -18,7 +18,7 @@ class TryoutSoalController extends Controller
      */
     public function index($id)
     {
-        $soal = TryoutSoal::with('banksoal.mapel')
+        $soal = TryoutSoal::with('banksoal.komponen')
             ->where('tryout_id', $id)
             ->orderBy('urutan')
             ->get()
@@ -28,7 +28,7 @@ class TryoutSoalController extends Controller
                     'pertanyaan'    => $item->banksoal->pertanyaan,
                     'urutan'        => $item->urutan,
                     'poin'          => $item->poin,
-                    'komponen_nama' => $item->banksoal->mapel?->nama_komponen ?? '-'
+                    'komponen_nama' => $item->banksoal->komponen?->nama_komponen ?? '-'
                 ];
             });
 
@@ -81,7 +81,7 @@ class TryoutSoalController extends Controller
     public function indexDetail($id)
     {
         $soal = TryoutSoal::with([
-                'banksoal.mapel',
+                'banksoal.komponen',
                 'banksoal.opsiJawaban',
                 'banksoal.pernyataanKompleks'
             ])
@@ -99,7 +99,7 @@ class TryoutSoalController extends Controller
                     'urutan'        => $item->urutan,
                     'poin'          => $item->poin,
                     'pembahasan'    => $banksoal->pembahasan,
-                    'komponen_nama' => $banksoal->mapel?->nama_komponen ?? '-',
+                    'komponen_nama' => $banksoal->komponen?->nama_komponen ?? '-',
                 ];
 
                 // ======================

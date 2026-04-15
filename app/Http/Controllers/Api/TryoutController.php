@@ -11,19 +11,21 @@ class TryoutController extends Controller
     public function index(Request $request)
     {
         $query = Tryout::query()
-            ->with(['mapel', 'pembuat'])
+            ->with(['komponen', 'pembuat'])
             ->withCount(['questions as total_soal']);
 
-        if ($request->filled('mapel_id')) {
-            $query->where('mapel_id', $request->mapel_id);
+        if ($request->filled('komponen_id')) {
+            $query->whereHas('komponen', function ($q) use ($request) {
+                $q->where('komponen.id', $request->komponen_id);
+            });
         }
 
         $data = $query->latest()->get()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'paket' => $item->paket,
-                'mapel_id' => $item->mapel_id,
-                'mapel' => $item->mapel?->nama ?? '-',
+                'komponen_id' => $item->komponen->pluck('id')->first(), // Optional fallback
+                'komponen' => $item->komponen->isNotEmpty() ? $item->komponen->pluck('nama_komponen')->implode(', ') : '-',
                 'total_soal' => $item->total_soal ?? 0,
                 'status' => $item->status,
                 'show_pembahasan' => (bool) $item->show_pembahasan,
@@ -40,14 +42,14 @@ class TryoutController extends Controller
 
     public function show($id)
     {
-        $tryout = Tryout::with('mapel')->findOrFail($id);
+        $tryout = Tryout::with('komponen')->findOrFail($id);
 
         return response()->json([
             'id' => $tryout->id,
             'paket' => $tryout->paket,
-            'mapel_id' => $tryout->mapel_id,
-            'mapel_nama' => $tryout->mapel?->nama ?? '-',
-            'tingkat' => $tryout->mapel?->tingkat ?? '-',
+            'komponen_id' => $tryout->komponen->pluck('id')->first(),
+            'komponen_nama' => $tryout->komponen->isNotEmpty() ? $tryout->komponen->pluck('nama_komponen')->implode(', ') : '-',
+            'tingkat' => $tryout->komponen->first()?->mata_uji ?? '-',
             'durasi_menit' => $tryout->durasi_menit,
             'mulai' => $tryout->mulai,
             'selesai' => $tryout->selesai,
@@ -64,7 +66,7 @@ class TryoutController extends Controller
     {
         $data = $request->validate([
             'paket' => 'required|string|max:255',
-            'mapel_id' => 'required|integer|exists:mapel,id',
+            'komponen_id' => 'required|integer|exists:komponen,id',
             'durasi_menit' => 'required|integer|min:1',
             'mulai' => 'required|date',
             'selesai' => 'required|date|after_or_equal:mulai',
@@ -77,7 +79,7 @@ class TryoutController extends Controller
 
         $tryout = Tryout::create([
             'paket' => $data['paket'],
-            'mapel_id' => $data['mapel_id'],
+            'komponen_id' => $data['komponen_id'],
             'durasi_menit' => $data['durasi_menit'],
             'mulai' => $data['mulai'],
             'selesai' => $data['selesai'],
@@ -100,7 +102,7 @@ class TryoutController extends Controller
     {
         $data = $request->validate([
             'paket' => 'required|string|max:255',
-            'mapel_id' => 'required|integer|exists:mapel,id',
+            'komponen_id' => 'required|integer|exists:komponen,id',
             'durasi_menit' => 'required|integer|min:1',
             'mulai' => 'required|date',
             'selesai' => 'required|date|after_or_equal:mulai',
@@ -114,7 +116,7 @@ class TryoutController extends Controller
         $tryout = Tryout::findOrFail($id);
         $tryout->update([
             'paket' => $data['paket'],
-            'mapel_id' => $data['mapel_id'],
+            'komponen_id' => $data['komponen_id'],
             'durasi_menit' => $data['durasi_menit'],
             'mulai' => $data['mulai'],
             'selesai' => $data['selesai'],
