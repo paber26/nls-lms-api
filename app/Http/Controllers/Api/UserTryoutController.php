@@ -55,8 +55,8 @@ class UserTryoutController extends Controller
                 return [
                     'id' => $tryout->id,
                     'nama' => $tryout->paket ?? $tryout->nama,
-                    'jenjang' => $komponen->mata_uji ?? '-',
-                    'komponen' => $komponen->nama_komponen ?? '-',
+                    'jenjang' => $komponen->first()?->mata_uji ?? '-',
+                    'komponen' => $komponen->isNotEmpty() ? $komponen->pluck('nama_komponen')->implode(', ') : '-',
                     'cakupan_komponen' => $cakupanKomponen,
                     'jumlah_soal' => $tryout->questions_count ?? 0,
                     'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
@@ -83,8 +83,8 @@ class UserTryoutController extends Controller
             'data' => [
                 'id' => $tryout->id,
                 'nama' => $tryout->paket ?? $tryout->nama,
-                'jenjang' => $komponen->mata_uji ?? '-',
-                'komponen' => $komponen->nama_komponen ?? '-',
+                'jenjang' => $komponen->first()?->mata_uji ?? '-',
+                'komponen' => $komponen->isNotEmpty() ? $komponen->pluck('nama_komponen')->implode(', ') : '-',
                 'jumlah_soal' => $tryout->questions_count ?? 0,
                 'durasi' => $tryout->durasi_menit ?? $tryout->durasi,
                 'mulai' => $tryout->mulai,
@@ -169,6 +169,14 @@ class UserTryoutController extends Controller
             ? $sekarang->diffInSeconds($waktuSelesai)
             : 0;
 
+        $komponenList = $tryout->komponen->map(function ($k) {
+            return [
+                'id' => $k->id,
+                'nama_komponen' => $k->nama_komponen,
+                'durasi_menit' => $k->pivot->durasi_menit ?? 0
+            ];
+        });
+
         return response()->json([
             'mulai' => $attempt->mulai,
             'durasi_menit' => $durasiMenit,
@@ -176,6 +184,7 @@ class UserTryoutController extends Controller
             'sisa_detik' => $sisaDetik,
             'komponen_id' => $tryout->komponen->pluck('id')->first(),
             'komponen_nama' => $tryout->komponen->isNotEmpty() ? $tryout->komponen->pluck('nama_komponen')->implode(', ') : '-',
+            'komponen_list' => $komponenList
         ]);
     }
 
