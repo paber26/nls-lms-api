@@ -101,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     
     Route::get('/kursus/{id}/modul', [ModulController::class, 'getByKursus']);
     Route::post('/modul', [ModulController::class, 'store']);
+    Route::put('/modul/{id}', [ModulController::class, 'update']);
     Route::delete('/modul/{id}', [ModulController::class, 'destroy']);
     Route::patch('/modul/{id}/status', [ModulController::class, 'updateStatus']);
 

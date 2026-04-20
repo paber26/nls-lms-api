@@ -52,6 +52,23 @@ class ModulController extends Controller
             'data' => $modul
         ], 201);
     }
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:255',
+        ]);
+
+        $modul = Modul::findOrFail($id);
+        $modul->update([
+            'nama' => $request->nama,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Modul berhasil diperbarui',
+            'data' => $modul
+        ]);
+    }
 
     public function destroy($id)
     {
