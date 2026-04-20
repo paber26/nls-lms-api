@@ -14,10 +14,16 @@ class Materi extends Model
         'tipe',
         'konten',
         'kunci_jawaban',
+        'pembahasan',
+        'kuis_interaktif',
         'videoUrl',
         'deskripsi',
         'durasi',
         'urutan',
+    ];
+
+    protected $casts = [
+        'kuis_interaktif' => 'array',
     ];
 
     public function modul()
