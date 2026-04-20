@@ -13,6 +13,7 @@ class Materi extends Model
         'judul',
         'tipe',
         'konten',
+        'kunci_jawaban',
         'videoUrl',
         'deskripsi',
         'durasi',

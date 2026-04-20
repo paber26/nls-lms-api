@@ -13,8 +13,9 @@ class MateriController extends Controller
         $request->validate([
             'modul_id' => 'required|exists:modul,id',
             'judul' => 'required|string|max:255',
-            'tipe' => 'required|string|in:article,video',
+            'tipe' => 'required|string|in:article,video,latihan_soal',
             'konten' => 'nullable|string',
+            'kunci_jawaban' => 'nullable|string',
             'videoUrl' => 'nullable|string',
             'deskripsi' => 'nullable|string',
             'durasi' => 'required|integer|min:1',
@@ -25,6 +26,7 @@ class MateriController extends Controller
             'judul' => $request->judul,
             'tipe' => $request->tipe,
             'konten' => $request->konten,
+            'kunci_jawaban' => $request->kunci_jawaban,
             'videoUrl' => $request->videoUrl,
             'deskripsi' => $request->deskripsi,
             'durasi' => $request->durasi,
@@ -44,15 +46,16 @@ class MateriController extends Controller
 
         $request->validate([
             'judul' => 'required|string|max:255',
-            'tipe' => 'required|string|in:article,video',
+            'tipe' => 'required|string|in:article,video,latihan_soal',
             'konten' => 'nullable|string',
+            'kunci_jawaban' => 'nullable|string',
             'videoUrl' => 'nullable|string',
             'deskripsi' => 'nullable|string',
             'durasi' => 'required|integer|min:1',
         ]);
 
         $materi->update($request->only([
-            'judul', 'tipe', 'konten', 'videoUrl', 'deskripsi', 'durasi'
+            'judul', 'tipe', 'konten', 'kunci_jawaban', 'videoUrl', 'deskripsi', 'durasi'
         ]));
 
         return response()->json([
