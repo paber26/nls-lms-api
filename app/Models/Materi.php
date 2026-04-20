@@ -30,4 +30,9 @@ class Materi extends Model
     {
         return $this->belongsTo(Modul::class, 'modul_id');
     }
+
+    public function usersCompleted()
+    {
+        return $this->belongsToMany(User::class, 'materi_user', 'materi_id', 'user_id')->withTimestamps();
+    }
 }

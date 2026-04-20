@@ -82,4 +82,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\CpSubmission::class);
     }
+
+    public function materiSelesai()
+    {
+        return $this->belongsToMany(\App\Models\Materi::class, 'materi_user', 'user_id', 'materi_id')->withTimestamps();
+    }
 }

@@ -12,9 +12,16 @@ class ModulController extends Controller
     public function getByKursus($kursusId)
     {
         $kursus = Kursus::findOrFail($kursusId);
+        $user = auth()->user();
+        
         $moduls = Modul::where('kursus_id', $kursusId)
-            ->with(['materi' => function($q) {
+            ->with(['materi' => function($q) use ($user) {
                 $q->orderBy('urutan', 'asc');
+                if ($user) {
+                    $q->withExists(['usersCompleted as is_completed' => function($query) use ($user) {
+                        $query->where('user_id', $user->id);
+                    }]);
+                }
             }])
             ->orderBy('urutan', 'asc')
             ->orderBy('id', 'asc')

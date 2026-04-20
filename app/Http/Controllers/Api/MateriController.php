@@ -82,6 +82,30 @@ class MateriController extends Controller
         ]);
     }
 
+    public function show($id)
+    {
+        $materi = Materi::with(['modul.kursus'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $materi
+        ]);
+    }
+
+    public function complete($id)
+    {
+        $materi = Materi::findOrFail($id);
+        $user = auth()->user();
+
+        // Mark as completed
+        $user->materiSelesai()->syncWithoutDetaching([$id]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Materi berhasil diselesaikan'
+        ]);
+    }
+
     public function reorder(Request $request)
     {
         // Expecting input format: materis => [{id: 1, urutan: 1}, {id: 2, urutan: 2}]

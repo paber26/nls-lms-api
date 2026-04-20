@@ -105,6 +105,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/modul/{id}', [ModulController::class, 'destroy']);
     Route::patch('/modul/{id}/status', [ModulController::class, 'updateStatus']);
 
+    Route::get('/materi/{id}', [MateriController::class, 'show']);
+    Route::post('/materi/{id}/complete', [MateriController::class, 'complete']);
     Route::post('/materi', [MateriController::class, 'store']);
     Route::put('/materi/{id}', [MateriController::class, 'update']);
     Route::delete('/materi/{id}', [MateriController::class, 'destroy']);
