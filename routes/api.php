@@ -14,6 +14,9 @@ use App\Http\Controllers\Api\SekolahController;
 use App\Http\Controllers\Api\MonitoringTryoutController;
 use App\Http\Controllers\Api\LeaderboardController;
 use App\Http\Middleware\EnsureAdminRole;
+use App\Http\Controllers\Api\KursusController;
+use App\Http\Controllers\Api\ModulController;
+use App\Http\Controllers\Api\MateriController;
 
 use App\Models\Sekolah;
 use App\Http\Controllers\Api\UserProfilController;
@@ -38,6 +41,7 @@ Route::get('/wilayah/kecamatan/{kabupatenId}', [WilayahController::class, 'kecam
 Route::get('/auth/google', [AuthController::class, 'redirectToGoogle']);
 Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -85,7 +89,25 @@ Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
 
 // Route::apiResource('banksoal', BankSoalController::class);
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
     Route::apiResource('banksoal', BankSoalController::class);
+    
+    Route::get('/kursus', [KursusController::class, 'index']);
+    Route::post('/kursus', [KursusController::class, 'store']);
+    Route::get('/kursus/{id}', [KursusController::class, 'show']);
+    Route::put('/kursus/{id}', [KursusController::class, 'update']);
+    Route::delete('/kursus/{id}', [KursusController::class, 'destroy']);
+    Route::patch('/kursus/{id}/status', [KursusController::class, 'toggleStatus']);
+    
+    Route::get('/kursus/{id}/modul', [ModulController::class, 'getByKursus']);
+    Route::post('/modul', [ModulController::class, 'store']);
+    Route::delete('/modul/{id}', [ModulController::class, 'destroy']);
+    Route::patch('/modul/{id}/status', [ModulController::class, 'updateStatus']);
+
+    Route::post('/materi', [MateriController::class, 'store']);
+    Route::put('/materi/{id}', [MateriController::class, 'update']);
+    Route::delete('/materi/{id}', [MateriController::class, 'destroy']);
+    Route::patch('/materi/reorder', [MateriController::class, 'reorder']);
         
     Route::get('/komponen', function () {
         return \Illuminate\Support\Facades\DB::table('komponen')
