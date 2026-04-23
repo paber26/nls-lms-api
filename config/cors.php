@@ -10,8 +10,8 @@ return [
         'http://localhost:5174',
         'http://localhost:5175',
         'http://localhost:5176',
-        'https://kuysnbt.next-level-study.com',
-        'https://snbt.next-level-study.com',
+        'https://kuylms.next-level-study.com',
+        'https://lms.next-level-study.com',
     ],
 
     'allowed_origins_patterns' => [],
