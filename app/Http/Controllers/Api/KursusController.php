@@ -10,10 +10,15 @@ class KursusController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kursus::query();
+        $query = Kursus::withCount('moduls');
         
         // Optional filters if we need them, but frontend handles it for now.
         $kursus = $query->orderBy('id', 'desc')->get();
+
+        // Map moduls_count into the 'materi' field for frontend compatibility
+        $kursus->each(function ($item) {
+            $item->materi = $item->moduls_count;
+        });
         
         return response()->json([
             'success' => true,

@@ -17,4 +17,9 @@ class Kursus extends Model
         'siswa',
         'status',
     ];
+
+    public function moduls()
+    {
+        return $this->hasMany(\App\Models\Modul::class, 'kursus_id');
+    }
 }
